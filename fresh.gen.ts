@@ -4,6 +4,7 @@
 
 import * as $_app from "./routes/_app.tsx";
 import * as $api_scrape from "./routes/api/scrape.ts";
+import * as $news from "./routes/news.tsx";
 
 import type { Manifest } from "$fresh/server.ts";
 
@@ -11,6 +12,7 @@ const manifest = {
   routes: {
     "./routes/_app.tsx": $_app,
     "./routes/api/scrape.ts": $api_scrape,
+    "./routes/news.tsx": $news,
   },
   islands: {},
   baseUrl: import.meta.url,
