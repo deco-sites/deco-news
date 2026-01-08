@@ -3476,12 +3476,3 @@ input.tab:checked + .tab-content,
 .htmx-request .\[\.htmx-request_\&\]\:hidden {
   display: none;
 }
-@keyframes spin {
-
-  to {
-    transform: rotate(360deg);
-  }
-}
-.htmx-request .\[\.htmx-request_\&\]\:animate-spin {
-  animation: spin 1s linear infinite;
-}

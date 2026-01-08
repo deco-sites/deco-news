@@ -1,4 +1,3 @@
-import { useSection } from "@deco/deco/hooks";
 import type { NewsItem } from "site/types/news.ts";
 
 export interface Props {
@@ -158,8 +157,6 @@ export default function News({
   loading = false,
   error,
 }: Props) {
-  const refreshLink = useSection({ props: { loading: true } });
-
   return (
     <section
       id="news-section"
@@ -176,14 +173,12 @@ export default function News({
           )}
 
           {/* Refresh button */}
-          <button
-            hx-target="#news-section"
-            hx-swap="outerHTML"
-            hx-get={refreshLink}
+          <a
+            href="/news"
             class="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-400 rounded-lg border border-emerald-500/30 hover:bg-emerald-500/20 transition-all"
           >
             <svg
-              class="w-4 h-4 [.htmx-request_&]:animate-spin"
+              class="w-4 h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -195,9 +190,8 @@ export default function News({
                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
               />
             </svg>
-            <span class="inline [.htmx-request_&]:hidden">Atualizar</span>
-            <span class="hidden [.htmx-request_&]:inline">Carregando...</span>
-          </button>
+            Atualizar
+          </a>
         </header>
 
         {/* Error State */}
