@@ -357,10 +357,7 @@ export default function News({
             </a>
 
             {/* Nav */}
-            <nav class="hidden md:flex items-center gap-8">
-              <a href="/" class="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors">Home</a>
-              <a href="/news" class="text-sm font-medium text-neutral-900">Notícias</a>
-            </nav>
+            
 
             {/* Actions */}
             <div class="flex items-center gap-3">

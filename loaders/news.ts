@@ -1,5 +1,5 @@
 import { getDatabase } from "site/mcp/mod.ts";
-import type { NewsItem, NewsLoaderResult } from "site/types/news.ts";
+import type { NewsItem } from "site/types/news.ts";
 
 export interface Props {
   /**
@@ -40,7 +40,7 @@ export function toNewsItem(article: ArticleDB): NewsItem {
 async function loader(
   props: Props,
   _req: Request,
-): Promise<NewsLoaderResult> {
+): Promise<NewsItem[]> {
   const { limit = 50 } = props;
 
   try {
@@ -55,17 +55,17 @@ async function loader(
 
     if (!result.success) {
       console.error("❌ [Loader] Erro ao buscar artigos:", result.error?.message);
-      return { items: [], error: result.error?.message };
+      return [];
     }
 
     const items = (result.data ?? []).map(toNewsItem);
     console.log(`📰 [Loader] ${items.length} artigos carregados do banco`);
 
-    return { items };
+    return items;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
     console.error("❌ [Loader] Erro:", message);
-    return { items: [], error: message };
+    return [];
   }
 }
 

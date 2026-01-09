@@ -6,8 +6,12 @@
       "__resolveType": "website/sections/Rendering/Lazy.tsx",
       "section": {
         "__resolveType": "site/sections/News.tsx",
-        "title": "Deco News",
-        "subtitle": "Weekly updates about the news of MCP's"
+        "title": "📰 Deco News",
+        "subtitle": "As últimas notícias do mundo tech, curadas especialmente para você",
+        "items": {
+          "__resolveType": "site/loaders/news.ts",
+          "limit": 50
+        }
       }
     },
     {
