@@ -176,7 +176,6 @@ export class DatabaseClient {
       // Tenta formato novo (structuredContent)
       const structuredData = result.result?.structuredContent?.result?.[0]?.results;
       if (structuredData) {
-        console.log(`✅ [DatabaseClient] Query retornou ${structuredData.length} registros (structuredContent)`);
         return {
           success: true,
           data: structuredData as T[],
