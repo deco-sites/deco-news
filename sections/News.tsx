@@ -6,7 +6,7 @@ import type { NewsItem } from "site/types/news.ts";
 function getWeekStart(date: Date): Date {
   const d = new Date(date);
   const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Ajusta para segunda-feira
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
   d.setDate(diff);
   d.setHours(0, 0, 0, 0);
   return d;
@@ -39,7 +39,6 @@ function formatWeekRange(weekStart: Date): string {
 function groupByWeek(items: NewsItem[]): Map<string, { label: string; items: NewsItem[] }> {
   const groups = new Map<string, { label: string; items: NewsItem[] }>();
 
-  // Ordena por data (mais recente primeiro)
   const sortedItems = [...items].sort((a, b) => {
     const dateA = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
     const dateB = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
@@ -55,8 +54,7 @@ function groupByWeek(items: NewsItem[]): Map<string, { label: string; items: New
       if (!isNaN(date.getTime())) {
         const weekStart = getWeekStart(date);
         weekKey = weekStart.toISOString().split("T")[0];
-        
-        // Verifica se é esta semana, semana passada, ou outra
+
         const now = new Date();
         const thisWeekStart = getWeekStart(now);
         const lastWeekStart = new Date(thisWeekStart);
@@ -90,7 +88,7 @@ function groupByWeek(items: NewsItem[]): Map<string, { label: string; items: New
 export interface Props {
   /**
    * @title Título da seção
-   * @default Últimas Notícias
+   * @default Deco News
    */
   title?: string;
   /**
@@ -120,51 +118,48 @@ export interface Props {
  */
 function DecoArticleCard({ item }: { item: NewsItem }) {
   return (
-    <article class="group relative col-span-full bg-gradient-to-br from-emerald-950/80 via-slate-900 to-cyan-950/80 rounded-3xl overflow-hidden border-2 border-emerald-500/30 hover:border-emerald-400/60 transition-all duration-500 hover:shadow-2xl hover:shadow-emerald-500/20">
-      {/* Decorative glow */}
-      <div class="absolute -inset-1 bg-gradient-to-r from-emerald-500/10 via-cyan-500/10 to-emerald-500/10 rounded-3xl blur-xl opacity-50 group-hover:opacity-100 transition-opacity" />
-      
-      <div class="relative p-8 md:p-10">
+    <article class="group col-span-full bg-white rounded-3xl overflow-hidden border border-neutral-200/60 transition-all duration-500 hover:shadow-2xl hover:border-lime-400/50">
+      <div class="p-8 md:p-12">
         {/* Badge */}
-        <div class="flex items-center gap-3 mb-6">
-          <div class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 rounded-full border border-emerald-500/30">
-            <div class="w-6 h-6 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center">
+        <div class="flex items-center gap-3 mb-8">
+          <div class="flex items-center gap-2 px-4 py-2 bg-lime-400/20 rounded-full">
+            <div class="w-6 h-6 rounded-full bg-lime-500 flex items-center justify-center">
               <span class="text-white font-bold text-xs">D</span>
             </div>
-            <span class="text-emerald-300 text-sm font-semibold">Deco</span>
+            <span class="text-forest-700 text-sm font-bold">Deco</span>
           </div>
           {item.category && (
-            <span class="px-3 py-1 text-xs font-semibold bg-cyan-500/20 text-cyan-400 rounded-full uppercase tracking-wider">
+            <span class="px-3 py-1 text-xs font-bold bg-neutral-100 text-neutral-600 rounded-full uppercase tracking-wider">
               {item.category}
             </span>
           )}
         </div>
 
         {/* Title */}
-        <h3 class="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-white to-cyan-300 leading-tight mb-4">
+        <h3 class="text-3xl md:text-4xl font-bold text-neutral-900 leading-tight mb-6">
           {item.title}
         </h3>
 
         {/* Description */}
         {item.description && (
-          <p class="text-lg text-slate-300 mb-6 leading-relaxed">{item.description}</p>
+          <p class="text-lg text-neutral-600 mb-6 leading-relaxed max-w-3xl">{item.description}</p>
         )}
 
         {/* Content preview */}
         {item.content && (
-          <div class="prose prose-invert prose-emerald max-w-none mb-6">
-            <p class="text-slate-400 line-clamp-4">{item.content.slice(0, 400)}...</p>
+          <div class="mb-8">
+            <p class="text-neutral-500 line-clamp-4 leading-relaxed">{item.content.slice(0, 400)}...</p>
           </div>
         )}
 
         {/* Footer */}
-        <div class="flex items-center justify-between pt-6 border-t border-emerald-500/20">
+        <div class="flex flex-wrap items-center justify-between gap-4 pt-8 border-t border-neutral-100">
           <div class="flex items-center gap-3">
-            <span class="text-sm text-emerald-400 font-medium">Por {item.author}</span>
+            <span class="text-sm text-lime-600 font-semibold">Por {item.author}</span>
             {item.publishedAt && (
               <>
-                <span class="text-emerald-600">•</span>
-                <time class="text-sm text-slate-400">
+                <span class="text-neutral-300">•</span>
+                <time class="text-sm text-neutral-500">
                   {new Date(item.publishedAt).toLocaleDateString("pt-BR", {
                     day: "numeric",
                     month: "long",
@@ -174,12 +169,12 @@ function DecoArticleCard({ item }: { item: NewsItem }) {
               </>
             )}
           </div>
-          <span class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-semibold rounded-xl shadow-lg shadow-emerald-500/25 group-hover:shadow-emerald-500/40 transition-all">
+          <button type="button" class="inline-flex items-center gap-2 px-6 py-3 bg-neutral-900 text-white font-semibold rounded-xl hover:bg-neutral-800 transition-all group-hover:shadow-lg">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
             Ler resumo completo
-          </span>
+          </button>
         </div>
       </div>
     </article>
@@ -187,18 +182,56 @@ function DecoArticleCard({ item }: { item: NewsItem }) {
 }
 
 /**
+ * Limpa markdown e caracteres estranhos do conteúdo
+ */
+function cleanContent(content: string): string {
+  return content
+    // Remove imagens markdown
+    .replace(/!\[.*?\]\(.*?\)/g, '')
+    // Remove links markdown vazios []()
+    .replace(/\[\]\([^)]*\)/g, '')
+    // Remove links markdown, mantendo o texto
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    // Remove URLs soltas
+    .replace(/https?:\/\/[^\s]+/g, '')
+    // Remove asteriscos de bold/italic
+    .replace(/\*+/g, '')
+    // Remove underscores de bold/italic
+    .replace(/_+/g, ' ')
+    // Remove headers markdown (#)
+    .replace(/^#+\s*/gm, '')
+    // Remove pipes de tabelas
+    .replace(/\|/g, '')
+    // Remove backslashes
+    .replace(/\\/g, '')
+    // Remove múltiplos espaços
+    .replace(/\s+/g, ' ')
+    // Remove linhas em branco múltiplas
+    .replace(/\n\s*\n/g, '\n')
+    // Remove texto comum de navegação/CTA
+    .replace(/Login|Sign Up|Book Demo|No items found\.|SHARE|Read more/gi, '')
+    .trim();
+}
+
+/**
  * Card padrão para notícias normais
  */
 function NewsCard({ item }: { item: NewsItem }) {
-  // Se for artigo da Deco, usa o card especial
   if (item.author === "Deco") {
     return <DecoArticleCard item={item} />;
   }
 
+  const cleanDescription = item.description ? cleanContent(item.description) : '';
+  const cleanContentText = item.content ? cleanContent(item.content) : '';
+  const displayText = cleanDescription || cleanContentText;
+
   return (
-    <article class="group relative bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl overflow-hidden border border-slate-700/50 hover:border-emerald-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/10">
+    <a
+    href={item.url}
+    target="_blank"
+    rel="noopener noreferrer" class="group news-card flex flex-col h-full cursor-pointer">
       {item.image && (
-        <div class="aspect-video overflow-hidden">
+        <div class="aspect-[16/10] overflow-hidden bg-neutral-100">
           <img
             src={item.image}
             alt={item.title}
@@ -207,38 +240,30 @@ function NewsCard({ item }: { item: NewsItem }) {
           />
         </div>
       )}
-      <div class="p-6 space-y-4">
+      <div class="flex flex-col flex-1 p-6">
         {item.category && (
-          <span class="inline-block px-3 py-1 text-xs font-semibold bg-emerald-500/20 text-emerald-400 rounded-full uppercase tracking-wider">
+          <span class="inline-block self-start px-3 py-1 text-xs font-bold bg-lime-400/20 text-forest-700 rounded-full uppercase tracking-wider mb-4">
             {item.category}
           </span>
         )}
-        <h3 class="text-xl font-bold text-white leading-tight group-hover:text-emerald-400 transition-colors line-clamp-2">
+        <h3 class="text-xl font-bold text-neutral-900 leading-snug group-hover:text-lime-600 transition-colors line-clamp-2 mb-3">
           {item.title}
         </h3>
-        {item.description && (
-          <p class="text-slate-400 text-sm line-clamp-3">{item.description}</p>
+        {displayText && (
+          <p class="text-neutral-500 text-sm line-clamp-3 mb-4 flex-1">{displayText}</p>
         )}
-        {item.content && !item.description && (
-          <p class="text-slate-400 text-sm line-clamp-3">{item.content}</p>
-        )}
-        <div class="flex items-center justify-between pt-4 border-t border-slate-700/50">
-          <div class="flex items-center gap-2">
-            {item.source && (
-              <span class="text-xs text-slate-500">{item.source}</span>
-            )}
+        <div class="flex items-center justify-between pt-4 border-t border-neutral-100 mt-auto">
+          <div class="flex items-center gap-2 text-xs text-neutral-400">
+            {item.source && <span class="font-medium">{item.source}</span>}
             {item.publishedAt && (
               <>
-                <span class="text-slate-600">•</span>
-                <time class="text-xs text-slate-500">{item.publishedAt}</time>
+                {item.source && <span>•</span>}
+                <time>{new Date(item.publishedAt).toLocaleDateString("pt-BR", { day: "numeric", month: "short" })}</time>
               </>
             )}
           </div>
-          <a
-            href={item.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="inline-flex items-center gap-1 text-emerald-400 text-sm font-medium hover:text-emerald-300 transition-colors"
+          <div
+            class="inline-flex items-center gap-1 text-lime-600 text-sm font-semibold hover:text-lime-700 transition-colors"
           >
             Ler mais
             <svg
@@ -254,19 +279,19 @@ function NewsCard({ item }: { item: NewsItem }) {
                 d="M17 8l4 4m0 0l-4 4m4-4H3"
               />
             </svg>
-          </a>
+          </div>
         </div>
       </div>
-    </article>
+    </a>
   );
 }
 
 function EmptyState() {
   return (
-    <div class="flex flex-col items-center justify-center py-20 text-center">
-      <div class="w-24 h-24 mb-6 rounded-full bg-slate-800 flex items-center justify-center">
+    <div class="flex flex-col items-center justify-center py-24 text-center">
+      <div class="w-24 h-24 mb-8 rounded-2xl bg-neutral-100 flex items-center justify-center">
         <svg
-          class="w-12 h-12 text-slate-600"
+          class="w-12 h-12 text-neutral-400"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -279,10 +304,10 @@ function EmptyState() {
           />
         </svg>
       </div>
-      <h3 class="text-xl font-semibold text-slate-300 mb-2">
+      <h3 class="text-2xl font-bold text-neutral-900 mb-3">
         Nenhuma notícia encontrada
       </h3>
-      <p class="text-slate-500 max-w-md">
+      <p class="text-neutral-500 max-w-md">
         Configure URLs no loader ou adicione notícias manualmente para começar.
       </p>
     </div>
@@ -295,14 +320,14 @@ function LoadingState() {
       {[1, 2, 3].map((i) => (
         <div
           key={i}
-          class="bg-slate-800/50 rounded-2xl overflow-hidden border border-slate-700/30 animate-pulse"
+          class="bg-white rounded-2xl overflow-hidden border border-neutral-200/60 animate-pulse"
         >
-          <div class="aspect-video bg-slate-700/50" />
+          <div class="aspect-[16/10] bg-neutral-100" />
           <div class="p-6 space-y-4">
-            <div class="h-3 bg-slate-700/50 rounded w-20" />
-            <div class="h-6 bg-slate-700/50 rounded w-full" />
-            <div class="h-4 bg-slate-700/50 rounded w-3/4" />
-            <div class="h-4 bg-slate-700/50 rounded w-1/2" />
+            <div class="h-3 bg-neutral-100 rounded w-20" />
+            <div class="h-6 bg-neutral-100 rounded w-full" />
+            <div class="h-4 bg-neutral-100 rounded w-3/4" />
+            <div class="h-4 bg-neutral-100 rounded w-1/2" />
           </div>
         </div>
       ))}
@@ -311,89 +336,169 @@ function LoadingState() {
 }
 
 export default function News({
-  title = "Últimas Notícias",
+  title: _title = "Deco News",
   subtitle,
   items = [],
   loading = false,
   error,
 }: Props) {
   return (
-    <section
-      id="news-section"
-      class="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 py-16 px-4"
-    >
-      <div class="container mx-auto max-w-7xl">
-        {/* Header */}
-        <header class="text-center mb-12">
-          <h1 class="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 mb-4">
-            {title}
-          </h1>
-          {subtitle && (
-            <p class="text-lg text-slate-400 max-w-2xl mx-auto">{subtitle}</p>
+    <div class="min-h-screen bg-[#F5F5F0]">
+      {/* Header */}
+      <header class="sticky top-0 z-50 bg-[#F5F5F0]/80 backdrop-blur-xl border-b border-neutral-200/50">
+        <div class="container mx-auto max-w-7xl px-6">
+          <div class="flex items-center justify-between h-16">
+            {/* Logo */}
+            <a href="/" class="flex items-center gap-2">
+              <div class="w-8 h-8 bg-lime-500 rounded-lg flex items-center justify-center">
+                <span class="text-white font-bold text-lg">D</span>
+              </div>
+              <span class="font-bold text-neutral-900 text-lg">News</span>
+            </a>
+
+            {/* Nav */}
+            <nav class="hidden md:flex items-center gap-8">
+              <a href="/" class="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors">Home</a>
+              <a href="/news" class="text-sm font-medium text-neutral-900">Notícias</a>
+            </nav>
+
+            {/* Actions */}
+            <div class="flex items-center gap-3">
+              <a
+                href="https://decocms.com"
+                target="_blank"
+                class="hidden sm:inline-flex items-center px-4 py-2 bg-neutral-900 text-white text-sm font-semibold rounded-xl hover:bg-neutral-800 transition-colors"
+              >
+                decocms
+              </a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Hero */}
+      <section class="pt-6 pb-12 md:pt-8 md:pb-16 px-6">
+        <div class="container mx-auto max-w-7xl">
+          <div class="max-w-5xl">
+            {/* Pill */}
+            <div class="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full text-sm font-medium border border-neutral-200/50 shadow-sm mb-8">
+              <span class="w-2 h-2 bg-lime-500 rounded-full animate-pulse"></span>
+              <span class="text-neutral-600">Atualizado automaticamente</span>
+            </div>
+
+            {/* Title - estilo Deco com palavras coloridas */}
+            <h1 class="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight leading-[0.95] mb-8">
+              <span class="text-neutral-900">Notícias </span>
+              <span class="text-lime-500">tech</span>
+              <span class="text-neutral-900">, </span>
+              <span class="text-lime-500">curadas</span>
+              <span class="text-neutral-900">, e </span>
+              <span class="text-lime-500">resumidas</span>
+              <span class="text-neutral-900"> — direto no seu feed.</span>
+            </h1>
+
+            {/* Subtitle */}
+            {subtitle && (
+              <p class="text-xl md:text-2xl text-neutral-500 max-w-3xl leading-relaxed">
+                {subtitle}
+              </p>
+            )}
+
+            {/* Features */}
+            <div class="flex flex-wrap gap-3 mt-10">
+              <span class="pill-lime">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+                Curadoria de IA
+              </span>
+              <span class="pill-lime">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+                Resumos semanais
+              </span>
+              <span class="pill-lime">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+                Fontes confiáveis
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Content */}
+      <section class="pb-24 px-6">
+        <div class="container mx-auto max-w-7xl">
+          {/* Error State */}
+          {error && (
+            <div class="mb-8 p-6 bg-red-50 border border-red-200 rounded-2xl text-red-700">
+              <div class="flex items-center gap-3">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+                <p class="font-medium">Erro ao carregar notícias: {error}</p>
+              </div>
+            </div>
           )}
 
-          {/* Refresh button */}
-          <a
-            href="/news"
-            class="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-400 rounded-lg border border-emerald-500/30 hover:bg-emerald-500/20 transition-all"
-          >
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-            Atualizar
-          </a>
-        </header>
-
-        {/* Error State */}
-        {error && (
-          <div class="mb-8 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-center">
-            <p>Erro ao carregar notícias: {error}</p>
-          </div>
-        )}
-
-        {/* Content */}
-        {loading ? (
-          <LoadingState />
-        ) : items.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <div class="space-y-12">
-            {Array.from(groupByWeek(items)).map(([weekKey, { label, items: weekItems }]) => (
-              <div key={weekKey} class="space-y-6">
-                {/* Week Header */}
-                <div class="flex items-center gap-4">
-                  <div class="flex items-center gap-3">
-                    <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                    <h2 class="text-2xl font-bold text-white">{label}</h2>
+          {/* Content */}
+          {loading ? (
+            <LoadingState />
+          ) : items.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <div class="space-y-16">
+              {Array.from(groupByWeek(items)).map(([weekKey, { label, items: weekItems }]) => (
+                <div key={weekKey} class="space-y-8">
+                  {/* Week Header */}
+                  <div class="flex items-center gap-6">
+                    <div class="flex items-center gap-4">
+                      <div class="w-3 h-3 bg-lime-500 rounded-full" />
+                      <h2 class="text-3xl font-bold text-neutral-900">{label}</h2>
+                    </div>
+                    <div class="flex-1 h-px bg-gradient-to-r from-neutral-200 to-transparent" />
+                    <span class="text-sm text-neutral-400 bg-white px-4 py-2 rounded-full border border-neutral-200/50">
+                      {weekItems.length} {weekItems.length === 1 ? "notícia" : "notícias"}
+                    </span>
                   </div>
-                  <div class="flex-1 h-px bg-gradient-to-r from-slate-700 to-transparent" />
-                  <span class="text-sm text-slate-500 bg-slate-800/50 px-3 py-1 rounded-full">
-                    {weekItems.length} {weekItems.length === 1 ? "notícia" : "notícias"}
-                  </span>
+
+                  {/* Week Items */}
+                  <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {weekItems.map((item, index) => (
+                      <NewsCard key={`${item.url}-${index}`} item={item} />
+                    ))}
+                  </div>
                 </div>
-                
-                {/* Week Items */}
-                <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {weekItems.map((item, index) => (
-                    <NewsCard key={`${item.url}-${index}`} item={item} />
-                  ))}
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer class="border-t border-neutral-200/50 bg-white/50 backdrop-blur-sm">
+        <div class="container mx-auto max-w-7xl px-6 py-8">
+          <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-neutral-500">Feito com</span>
+              <a href="https://decocms.com" target="_blank" class="flex items-center gap-1 text-sm font-semibold text-neutral-900 hover:text-lime-600 transition-colors">
+                <div class="w-5 h-5 bg-lime-500 rounded flex items-center justify-center">
+                  <span class="text-white font-bold text-xs">D</span>
                 </div>
-              </div>
-            ))}
+                decocms
+              </a>
+            </div>
+            <div class="flex items-center gap-6 text-sm text-neutral-500">
+              <a href="https://github.com/deco-cx" target="_blank" class="hover:text-neutral-900 transition-colors">GitHub</a>
+              <a href="https://discord.gg/deco" target="_blank" class="hover:text-neutral-900 transition-colors">Discord</a>
+              <a href="https://decocms.com/docs" target="_blank" class="hover:text-neutral-900 transition-colors">Docs</a>
+            </div>
           </div>
-        )}
-      </div>
-    </section>
+        </div>
+      </footer>
+    </div>
   );
 }
-
