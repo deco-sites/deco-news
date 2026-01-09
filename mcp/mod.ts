@@ -1,29 +1,23 @@
 /**
- * Módulo MCP Client para Deco Gateway - scrape_content
+ * Módulo MCP Database para Deco CMS
  *
  * Uso:
  * ```ts
- * import { MCPClient, scrapeContent } from "site/mcp/mod.ts";
+ * import { DatabaseClient, getDatabase } from "site/mcp/mod.ts";
  *
- * // Uso simples (requer MCP_BEARER_TOKEN nas env vars)
- * const result = await scrapeContent("https://example.com");
+ * // Uso simples (requer ADMIN_DB_TOKEN nas env vars)
+ * const db = getDatabase();
+ * const result = await db.query("SELECT * FROM contents");
  *
- * // Uso avançado
- * const client = new MCPClient({ bearerToken: "seu-token" });
- * await client.initialize();
- * const tools = await client.listTools();
- * const result = await client.scrapeContent("https://example.com");
- *
- * // Tool genérica
- * const result = await client.callTool("scrape_content", { url: "https://example.com" });
+ * // Helpers
+ * const contents = await db.select("contents", { where: "author = 'Deco'", limit: 10 });
  * ```
  */
 
 export {
-  MCPClient,
-  MCP_GATEWAY_URL,
-  scrapeContent,
-} from "./client.ts";
+  DatabaseClient,
+  DEFAULT_API_URL,
+  getDatabase,
+} from "./database.ts";
 
-export type { MCPClientOptions } from "./client.ts";
-
+export type { DatabaseClientOptions, QueryResult } from "./database.ts";

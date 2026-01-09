@@ -1,44 +1,56 @@
 import { defineRoute } from "$fresh/server.ts";
 import News from "../sections/News.tsx";
+import { getDatabase } from "../mcp/database.ts";
+import { toNewsItem } from "../loaders/news.ts";
+import type { ArticleDB } from "../loaders/news.ts";
+import type { NewsItem } from "../types/news.ts";
 
-export default defineRoute((_req, _ctx) => {
-  // Exemplo de notícias estáticas para demonstração
-  const demoItems = [
-    {
-      title: "Inteligência Artificial revoluciona o mercado de trabalho",
-      description:
-        "Novas ferramentas de IA estão transformando a forma como trabalhamos e criamos conteúdo.",
-      url: "https://example.com/ai-revolucao",
-      source: "Tech News",
-      category: "Tecnologia",
-      publishedAt: "8 Jan 2026",
-    },
-    {
-      title: "Deco.cx lança nova versão do framework",
-      description:
-        "A plataforma de desenvolvimento web mais rápida do Brasil acaba de receber atualizações importantes.",
-      url: "https://deco.cx",
-      source: "Deco Blog",
-      category: "Desenvolvimento",
-      publishedAt: "7 Jan 2026",
-    },
-    {
-      title: "Como criar sites modernos com Fresh e Preact",
-      description:
-        "Guia completo para desenvolvedores que querem criar aplicações web performáticas.",
-      url: "https://fresh.deno.dev",
-      source: "Deno Land",
-      category: "Tutorial",
-      publishedAt: "6 Jan 2026",
-    },
-  ];
+/**
+ * Busca artigos do banco de dados (populado pelo workflow semanal)
+ */
+async function fetchContentsFromDB(limit: number = 50): Promise<NewsItem[]> {
+  console.log("🔍 [Route] Buscando artigos do banco...");
+  
+  try {
+    const db = getDatabase();
+    
+    const result = await db.query<ArticleDB>(`
+      SELECT * FROM contents
+      ORDER BY updated_at DESC
+      LIMIT ${limit}
+    `);
+    
+    // Verifica se a query foi bem sucedida e se data é um array
+    if (result.success && Array.isArray(result.data)) {
+      console.log(`📰 [Route] ${result.data.length} artigos carregados do banco`);
+      return result.data.map(toNewsItem);
+    } else {
+      console.warn("⚠️ [Route] Query retornou sem dados:", result.error?.message);
+    }
+  } catch (e) {
+    console.error("❌ [Route] Erro ao buscar artigos:", e);
+  }
+  return [];
+}
+
+export default defineRoute(async (_req, _ctx) => {
+  let items: NewsItem[] = [];
+  let error: string | undefined;
+
+  try {
+    // Busca artigos do banco de dados (populado pelo workflow)
+    items = await fetchContentsFromDB(50);
+  } catch (e) {
+    error = e instanceof Error ? e.message : "Erro ao carregar notícias";
+    console.error("❌ [Route] Erro:", e);
+  }
 
   return (
     <News
       title="📰 Deco News"
       subtitle="As últimas notícias do mundo tech, curadas especialmente para você"
-      items={demoItems}
+      items={items}
+      error={error}
     />
   );
 });
-

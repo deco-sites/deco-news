@@ -1,75 +1,70 @@
-import { MCPClient } from "site/mcp/mod.ts";
-import type { NewsItem, NewsLoaderResult, ScrapedContent } from "site/types/news.ts";
-
-const BEARER_TOKEN = Deno.env.get("MCP_BEARER_TOKEN") ||
-  "bKnXLRrjwFivSpqhzznaySIwbhfwSAbi";
+import { getDatabase } from "site/mcp/mod.ts";
+import type { NewsItem, NewsLoaderResult } from "site/types/news.ts";
 
 export interface Props {
   /**
-   * @title URLs para scrape
-   * @description Lista de URLs para buscar notícias
-   */
-  urls?: string[];
-  /**
    * @title Limite de itens
    * @description Número máximo de notícias para retornar
-   * @default 10
+   * @default 50
    */
   limit?: number;
 }
 
+// Tipo do artigo no banco de dados (tabela contents)
+export interface ArticleDB {
+  title: string;
+  url: string;
+  content?: string;
+  source_url?: string;
+  source_title?: string;
+  updated_at?: string;
+}
+
+/**
+ * Converte registro do banco para NewsItem
+ */
+export function toNewsItem(article: ArticleDB): NewsItem {
+  return {
+    title: article.title,
+    url: article.url,
+    content: article.content,
+    source: article.source_title,
+    publishedAt: article.updated_at,
+  };
+}
+
 /**
  * @title Loader de Notícias
- * @description Carrega notícias a partir de URLs usando MCP scrape
+ * @description Carrega notícias do banco de dados (populado pelo workflow semanal)
  */
 async function loader(
   props: Props,
   _req: Request,
 ): Promise<NewsLoaderResult> {
-  const { urls = [], limit = 10 } = props;
-
-  if (urls.length === 0) {
-    return { items: [] };
-  }
+  const { limit = 50 } = props;
 
   try {
-    const client = new MCPClient({ bearerToken: BEARER_TOKEN });
-    await client.initialize();
+    const db = getDatabase();
+    
+    // Busca artigos do banco
+    const result = await db.query<ArticleDB>(`
+      SELECT * FROM contents 
+      ORDER BY updated_at DESC
+      LIMIT ${limit}
+    `);
 
-    const results = await Promise.allSettled(
-      urls.slice(0, limit).map(async (url): Promise<NewsItem | null> => {
-        try {
-          const result = await client.scrapeContent(url);
-          const data: ScrapedContent = JSON.parse(
-            result.content[0]?.text || "{}",
-          );
+    if (!result.success) {
+      console.error("❌ [Loader] Erro ao buscar artigos:", result.error?.message);
+      return { items: [], error: result.error?.message };
+    }
 
-          if (!data.success || !data.title) {
-            return null;
-          }
-
-          return {
-            title: data.title,
-            content: data.content,
-            url: data.url || url,
-            source: new URL(url).hostname,
-          };
-        } catch {
-          return null;
-        }
-      }),
-    );
-
-    const items = results
-      .filter(
-        (r): r is PromiseFulfilledResult<NewsItem> =>
-          r.status === "fulfilled" && r.value !== null,
-      )
-      .map((r) => r.value);
+    const items = (result.data ?? []).map(toNewsItem);
+    console.log(`📰 [Loader] ${items.length} artigos carregados do banco`);
 
     return { items };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
+    console.error("❌ [Loader] Erro:", message);
     return { items: [], error: message };
   }
 }

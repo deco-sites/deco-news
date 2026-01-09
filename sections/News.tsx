@@ -1,5 +1,92 @@
 import type { NewsItem } from "site/types/news.ts";
 
+/**
+ * Retorna o início da semana (segunda-feira) para uma data
+ */
+function getWeekStart(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Ajusta para segunda-feira
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+/**
+ * Formata o intervalo da semana para exibição
+ */
+function formatWeekRange(weekStart: Date): string {
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+
+  const options: Intl.DateTimeFormatOptions = {
+    day: "numeric",
+    month: "short",
+  };
+
+  const startStr = weekStart.toLocaleDateString("pt-BR", options);
+  const endStr = weekEnd.toLocaleDateString("pt-BR", {
+    ...options,
+    year: "numeric",
+  });
+
+  return `${startStr} - ${endStr}`;
+}
+
+/**
+ * Agrupa notícias por semana
+ */
+function groupByWeek(items: NewsItem[]): Map<string, { label: string; items: NewsItem[] }> {
+  const groups = new Map<string, { label: string; items: NewsItem[] }>();
+
+  // Ordena por data (mais recente primeiro)
+  const sortedItems = [...items].sort((a, b) => {
+    const dateA = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
+    const dateB = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
+    return dateB - dateA;
+  });
+
+  for (const item of sortedItems) {
+    let weekKey: string;
+    let weekLabel: string;
+
+    if (item.publishedAt) {
+      const date = new Date(item.publishedAt);
+      if (!isNaN(date.getTime())) {
+        const weekStart = getWeekStart(date);
+        weekKey = weekStart.toISOString().split("T")[0];
+        
+        // Verifica se é esta semana, semana passada, ou outra
+        const now = new Date();
+        const thisWeekStart = getWeekStart(now);
+        const lastWeekStart = new Date(thisWeekStart);
+        lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+
+        if (weekStart.getTime() === thisWeekStart.getTime()) {
+          weekLabel = "Esta semana";
+        } else if (weekStart.getTime() === lastWeekStart.getTime()) {
+          weekLabel = "Semana passada";
+        } else {
+          weekLabel = formatWeekRange(weekStart);
+        }
+      } else {
+        weekKey = "sem-data";
+        weekLabel = "Sem data";
+      }
+    } else {
+      weekKey = "sem-data";
+      weekLabel = "Sem data";
+    }
+
+    if (!groups.has(weekKey)) {
+      groups.set(weekKey, { label: weekLabel, items: [] });
+    }
+    groups.get(weekKey)!.items.push(item);
+  }
+
+  return groups;
+}
+
 export interface Props {
   /**
    * @title Título da seção
@@ -17,11 +104,6 @@ export interface Props {
    */
   items?: NewsItem[];
   /**
-   * @title URL para buscar
-   * @description URL para fazer scrape de notícia
-   */
-  scrapeUrl?: string;
-  /**
    * @title Carregando
    * @hide
    */
@@ -33,7 +115,86 @@ export interface Props {
   error?: string;
 }
 
+/**
+ * Card especial para artigos da Deco (resumos semanais)
+ */
+function DecoArticleCard({ item }: { item: NewsItem }) {
+  return (
+    <article class="group relative col-span-full bg-gradient-to-br from-emerald-950/80 via-slate-900 to-cyan-950/80 rounded-3xl overflow-hidden border-2 border-emerald-500/30 hover:border-emerald-400/60 transition-all duration-500 hover:shadow-2xl hover:shadow-emerald-500/20">
+      {/* Decorative glow */}
+      <div class="absolute -inset-1 bg-gradient-to-r from-emerald-500/10 via-cyan-500/10 to-emerald-500/10 rounded-3xl blur-xl opacity-50 group-hover:opacity-100 transition-opacity" />
+      
+      <div class="relative p-8 md:p-10">
+        {/* Badge */}
+        <div class="flex items-center gap-3 mb-6">
+          <div class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 rounded-full border border-emerald-500/30">
+            <div class="w-6 h-6 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center">
+              <span class="text-white font-bold text-xs">D</span>
+            </div>
+            <span class="text-emerald-300 text-sm font-semibold">Deco</span>
+          </div>
+          {item.category && (
+            <span class="px-3 py-1 text-xs font-semibold bg-cyan-500/20 text-cyan-400 rounded-full uppercase tracking-wider">
+              {item.category}
+            </span>
+          )}
+        </div>
+
+        {/* Title */}
+        <h3 class="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-white to-cyan-300 leading-tight mb-4">
+          {item.title}
+        </h3>
+
+        {/* Description */}
+        {item.description && (
+          <p class="text-lg text-slate-300 mb-6 leading-relaxed">{item.description}</p>
+        )}
+
+        {/* Content preview */}
+        {item.content && (
+          <div class="prose prose-invert prose-emerald max-w-none mb-6">
+            <p class="text-slate-400 line-clamp-4">{item.content.slice(0, 400)}...</p>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div class="flex items-center justify-between pt-6 border-t border-emerald-500/20">
+          <div class="flex items-center gap-3">
+            <span class="text-sm text-emerald-400 font-medium">Por {item.author}</span>
+            {item.publishedAt && (
+              <>
+                <span class="text-emerald-600">•</span>
+                <time class="text-sm text-slate-400">
+                  {new Date(item.publishedAt).toLocaleDateString("pt-BR", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </time>
+              </>
+            )}
+          </div>
+          <span class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-semibold rounded-xl shadow-lg shadow-emerald-500/25 group-hover:shadow-emerald-500/40 transition-all">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Ler resumo completo
+          </span>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+/**
+ * Card padrão para notícias normais
+ */
 function NewsCard({ item }: { item: NewsItem }) {
+  // Se for artigo da Deco, usa o card especial
+  if (item.author === "Deco") {
+    return <DecoArticleCard item={item} />;
+  }
+
   return (
     <article class="group relative bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl overflow-hidden border border-slate-700/50 hover:border-emerald-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/10">
       {item.image && (
@@ -153,7 +314,6 @@ export default function News({
   title = "Últimas Notícias",
   subtitle,
   items = [],
-  scrapeUrl,
   loading = false,
   error,
 }: Props) {
@@ -201,24 +361,34 @@ export default function News({
           </div>
         )}
 
-        {/* Scrape URL input */}
-        {scrapeUrl && (
-          <div class="mb-8 p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
-            <p class="text-sm text-slate-400">
-              Buscando de: <span class="text-emerald-400">{scrapeUrl}</span>
-            </p>
-          </div>
-        )}
-
         {/* Content */}
         {loading ? (
           <LoadingState />
         ) : items.length === 0 ? (
           <EmptyState />
         ) : (
-          <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {items.map((item, index) => (
-              <NewsCard key={`${item.url}-${index}`} item={item} />
+          <div class="space-y-12">
+            {Array.from(groupByWeek(items)).map(([weekKey, { label, items: weekItems }]) => (
+              <div key={weekKey} class="space-y-6">
+                {/* Week Header */}
+                <div class="flex items-center gap-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                    <h2 class="text-2xl font-bold text-white">{label}</h2>
+                  </div>
+                  <div class="flex-1 h-px bg-gradient-to-r from-slate-700 to-transparent" />
+                  <span class="text-sm text-slate-500 bg-slate-800/50 px-3 py-1 rounded-full">
+                    {weekItems.length} {weekItems.length === 1 ? "notícia" : "notícias"}
+                  </span>
+                </div>
+                
+                {/* Week Items */}
+                <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {weekItems.map((item, index) => (
+                    <NewsCard key={`${item.url}-${index}`} item={item} />
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         )}
