@@ -24,8 +24,8 @@ function formatWeekRange(weekStart: Date): string {
     month: "short",
   };
 
-  const startStr = weekStart.toLocaleDateString("pt-BR", options);
-  const endStr = weekEnd.toLocaleDateString("pt-BR", {
+  const startStr = weekStart.toLocaleDateString("en-US", options);
+  const endStr = weekEnd.toLocaleDateString("en-US", {
     ...options,
     year: "numeric",
   });
@@ -61,19 +61,19 @@ function groupByWeek(items: NewsItem[]): Map<string, { label: string; items: New
         lastWeekStart.setDate(lastWeekStart.getDate() - 7);
 
         if (weekStart.getTime() === thisWeekStart.getTime()) {
-          weekLabel = "Esta semana";
+          weekLabel = "This week";
         } else if (weekStart.getTime() === lastWeekStart.getTime()) {
-          weekLabel = "Semana passada";
+          weekLabel = "Last week";
         } else {
           weekLabel = formatWeekRange(weekStart);
         }
       } else {
-        weekKey = "sem-data";
-        weekLabel = "Sem data";
+        weekKey = "no-date";
+        weekLabel = "No date";
       }
     } else {
-      weekKey = "sem-data";
-      weekLabel = "Sem data";
+      weekKey = "no-date";
+      weekLabel = "No date";
     }
 
     if (!groups.has(weekKey)) {
@@ -155,12 +155,12 @@ function DecoArticleCard({ item }: { item: NewsItem }) {
         {/* Footer */}
         <div class="flex flex-wrap items-center justify-between gap-4 pt-8 border-t border-neutral-100">
           <div class="flex items-center gap-3">
-            <span class="text-sm text-lime-600 font-semibold">Por {item.author}</span>
+            <span class="text-sm text-lime-600 font-semibold">By {item.author}</span>
             {item.publishedAt && (
               <>
                 <span class="text-neutral-300">•</span>
                 <time class="text-sm text-neutral-500">
-                  {new Date(item.publishedAt).toLocaleDateString("pt-BR", {
+                  {new Date(item.publishedAt).toLocaleDateString("en-US", {
                     day: "numeric",
                     month: "long",
                     year: "numeric",
@@ -173,7 +173,7 @@ function DecoArticleCard({ item }: { item: NewsItem }) {
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            Ler resumo completo
+            Read full summary
           </button>
         </div>
       </div>
@@ -258,14 +258,14 @@ function NewsCard({ item }: { item: NewsItem }) {
             {item.publishedAt && (
               <>
                 {item.source && <span>•</span>}
-                <time>{new Date(item.publishedAt).toLocaleDateString("pt-BR", { day: "numeric", month: "short" })}</time>
+                <time>{new Date(item.publishedAt).toLocaleDateString("en-US", { day: "numeric", month: "short" })}</time>
               </>
             )}
           </div>
           <div
             class="inline-flex items-center gap-1 text-lime-600 text-sm font-semibold hover:text-lime-700 transition-colors"
           >
-            Ler mais
+            Read more
             <svg
               class="w-4 h-4 group-hover:translate-x-1 transition-transform"
               fill="none"
@@ -305,10 +305,10 @@ function EmptyState() {
         </svg>
       </div>
       <h3 class="text-2xl font-bold text-neutral-900 mb-3">
-        Nenhuma notícia encontrada
+        No news found
       </h3>
       <p class="text-neutral-500 max-w-md">
-        Configure URLs no loader ou adicione notícias manualmente para começar.
+        Configure URLs in the loader or add news manually to get started.
       </p>
     </div>
   );
@@ -342,6 +342,7 @@ export default function News({
   loading = false,
   error,
 }: Props) {
+
   return (
     <div class="min-h-screen bg-[#F5F5F0]">
       {/* Header */}
@@ -380,18 +381,17 @@ export default function News({
             {/* Pill */}
             <div class="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full text-sm font-medium border border-neutral-200/50 shadow-sm mb-8">
               <span class="w-2 h-2 bg-lime-500 rounded-full animate-pulse"></span>
-              <span class="text-neutral-600">Atualizado automaticamente</span>
+              <span class="text-neutral-600">Automatically updated</span>
             </div>
 
             {/* Title - estilo Deco com palavras coloridas */}
             <h1 class="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight leading-[0.95] mb-8">
-              <span class="text-neutral-900">Notícias </span>
-              <span class="text-lime-500">tech</span>
-              <span class="text-neutral-900">, </span>
-              <span class="text-lime-500">curadas</span>
-              <span class="text-neutral-900">, e </span>
-              <span class="text-lime-500">resumidas</span>
-              <span class="text-neutral-900"> — direto no seu feed.</span>
+              <span class="text-lime-500">Tech</span>
+              <span class="text-neutral-900"> news, </span>
+              <span class="text-lime-500">curated</span>
+              <span class="text-neutral-900"> and </span>
+              <span class="text-lime-500">summarized</span>
+              <span class="text-neutral-900"> — straight to your feed.</span>
             </h1>
 
             {/* Subtitle */}
@@ -407,19 +407,19 @@ export default function News({
                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
                 </svg>
-                Curadoria de IA
+                AI Curation
               </span>
               <span class="pill-lime">
                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
                 </svg>
-                Resumos semanais
+                Weekly Summaries
               </span>
               <span class="pill-lime">
                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
                 </svg>
-                Fontes confiáveis
+                Trusted Sources
               </span>
             </div>
           </div>
@@ -436,7 +436,7 @@ export default function News({
                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                   <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
                 </svg>
-                <p class="font-medium">Erro ao carregar notícias: {error}</p>
+                <p class="font-medium">Error loading news: {error}</p>
               </div>
             </div>
           )}
@@ -458,7 +458,7 @@ export default function News({
                     </div>
                     <div class="flex-1 h-px bg-gradient-to-r from-neutral-200 to-transparent" />
                     <span class="text-sm text-neutral-400 bg-white px-4 py-2 rounded-full border border-neutral-200/50">
-                      {weekItems.length} {weekItems.length === 1 ? "notícia" : "notícias"}
+                      {weekItems.length} {weekItems.length === 1 ? "article" : "articles"}
                     </span>
                   </div>
 
@@ -480,7 +480,7 @@ export default function News({
         <div class="container mx-auto max-w-7xl px-6 py-8">
           <div class="flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="flex items-center gap-2">
-              <span class="text-sm text-neutral-500">Feito com</span>
+              <span class="text-sm text-neutral-500">Made with</span>
               <a href="https://decocms.com" target="_blank" class="flex items-center gap-1 text-sm font-semibold text-neutral-900 hover:text-lime-600 transition-colors">
                 <div class="w-5 h-5 bg-lime-500 rounded flex items-center justify-center">
                   <span class="text-white font-bold text-xs">D</span>

@@ -12,11 +12,14 @@ export interface Props {
 
 // Tipo do artigo no banco de dados (tabela contents)
 export interface ArticleDB {
-  title: string;
-  url: string;
-  content?: string;
+  id: number;
+  article_title: string;
+  article_url: string;
+  summary?: string;
+  key_points?: string;
   source_url?: string;
   source_title?: string;
+  created_at?: string;
   updated_at?: string;
 }
 
@@ -25,9 +28,9 @@ export interface ArticleDB {
  */
 export function toNewsItem(article: ArticleDB): NewsItem {
   return {
-    title: article.title,
-    url: article.url,
-    content: article.content,
+    title: article.article_title,
+    url: article.article_url,
+    content: article.summary,
     source: article.source_title,
     publishedAt: article.updated_at,
   };
@@ -59,7 +62,6 @@ async function loader(
     }
 
     const items = (result.data ?? []).map(toNewsItem);
-    console.log(`📰 [Loader] ${items.length} artigos carregados do banco`);
 
     return items;
   } catch (error) {
