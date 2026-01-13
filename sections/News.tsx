@@ -224,12 +224,13 @@ function NewsCard({ item }: { item: NewsItem }) {
   const cleanDescription = item.description ? cleanContent(item.description) : '';
   const cleanContentText = item.content ? cleanContent(item.content) : '';
   const displayText = cleanDescription || cleanContentText;
+  const isReddit = item.sourceType === 'reddit';
 
   return (
     <a
     href={item.url}
     target="_blank"
-    rel="noopener noreferrer" class="group news-card flex flex-col h-full cursor-pointer">
+    rel="noopener noreferrer" class={`group news-card flex flex-col h-full cursor-pointer ${isReddit ? 'reddit-card' : ''}`}>
       {item.image && (
         <div class="aspect-[16/10] overflow-hidden bg-neutral-100">
           <img
@@ -241,11 +242,21 @@ function NewsCard({ item }: { item: NewsItem }) {
         </div>
       )}
       <div class="flex flex-col flex-1 p-6">
-        {item.category && (
-          <span class="inline-block self-start px-3 py-1 text-xs font-bold bg-lime-400/20 text-forest-700 rounded-full uppercase tracking-wider mb-4">
-            {item.category}
-          </span>
-        )}
+        <div class="flex items-center gap-2 mb-4">
+          {isReddit && (
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold bg-orange-500/10 text-orange-600 rounded-full border border-orange-200">
+              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/>
+              </svg>
+              Reddit
+            </span>
+          )}
+          {item.category && (
+            <span class="inline-block self-start px-3 py-1 text-xs font-bold bg-lime-400/20 text-forest-700 rounded-full uppercase tracking-wider">
+              {item.category}
+            </span>
+          )}
+        </div>
         <h3 class="text-xl font-bold text-neutral-900 leading-snug group-hover:text-lime-600 transition-colors line-clamp-2 mb-3">
           {item.title}
         </h3>
@@ -342,6 +353,22 @@ export default function News({
   loading = false,
   error,
 }: Props) {
+  // Estado do filtro (usando query string para persistência)
+  const currentFilter = typeof globalThis !== 'undefined' && globalThis.location
+    ? new URLSearchParams(globalThis.location.search).get('filter') || 'all'
+    : 'all';
+
+  // Função para filtrar itens
+  const filteredItems = items.filter(item => {
+    if (currentFilter === 'all') return true;
+    if (currentFilter === 'reddit') return item.sourceType === 'reddit';
+    if (currentFilter === 'blogs') return item.sourceType === 'blog';
+    return true;
+  });
+
+  // Contadores
+  const redditCount = items.filter(i => i.sourceType === 'reddit').length;
+  const blogCount = items.filter(i => i.sourceType === 'blog').length;
 
   return (
     <div class="min-h-screen bg-[#F5F5F0]">
@@ -429,6 +456,68 @@ export default function News({
       {/* Content */}
       <section class="pb-24 px-6">
         <div class="container mx-auto max-w-7xl">
+          {/* Filter Tabs */}
+          {!loading && items.length > 0 && (
+            <div class="mb-12">
+              <div class="inline-flex items-center gap-2 p-1.5 bg-white rounded-2xl border border-neutral-200/60 shadow-sm">
+                <a
+                  href="?filter=all"
+                  class={`px-6 py-3 rounded-xl font-semibold text-sm transition-all ${
+                    currentFilter === 'all'
+                      ? 'bg-neutral-900 text-white shadow-md'
+                      : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
+                  }`}
+                >
+                  Todos
+                  <span class={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+                    currentFilter === 'all' 
+                      ? 'bg-white/20 text-white' 
+                      : 'bg-neutral-100 text-neutral-500'
+                  }`}>
+                    {items.length}
+                  </span>
+                </a>
+                <a
+                  href="?filter=blogs"
+                  class={`px-6 py-3 rounded-xl font-semibold text-sm transition-all ${
+                    currentFilter === 'blogs'
+                      ? 'bg-lime-500 text-white shadow-md'
+                      : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
+                  }`}
+                >
+                  Blogs
+                  <span class={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+                    currentFilter === 'blogs' 
+                      ? 'bg-white/20 text-white' 
+                      : 'bg-neutral-100 text-neutral-500'
+                  }`}>
+                    {blogCount}
+                  </span>
+                </a>
+                <a
+                  href="?filter=reddit"
+                  class={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all ${
+                    currentFilter === 'reddit'
+                      ? 'bg-orange-500 text-white shadow-md'
+                      : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
+                  }`}
+                >
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/>
+                  </svg>
+                  Reddit
+                  <span class={`ml-1 px-2 py-0.5 rounded-full text-xs ${
+                    currentFilter === 'reddit' 
+                      ? 'bg-white/20 text-white' 
+                      : 'bg-neutral-100 text-neutral-500'
+                  }`}>
+                    {redditCount}
+                  </span>
+                </a>
+              </div>
+            </div>
+          )}
+
           {/* Error State */}
           {error && (
             <div class="mb-8 p-6 bg-red-50 border border-red-200 rounded-2xl text-red-700">
@@ -444,11 +533,11 @@ export default function News({
           {/* Content */}
           {loading ? (
             <LoadingState />
-          ) : items.length === 0 ? (
+          ) : filteredItems.length === 0 ? (
             <EmptyState />
           ) : (
             <div class="space-y-16">
-              {Array.from(groupByWeek(items)).map(([weekKey, { label, items: weekItems }]) => (
+              {Array.from(groupByWeek(filteredItems)).map(([weekKey, { label, items: weekItems }]) => (
                 <div key={weekKey} class="space-y-8">
                   {/* Week Header */}
                   <div class="flex items-center gap-6">

@@ -12,6 +12,7 @@ export interface NewsItem {
   publishedAt?: string;
   source?: string;
   category?: string;
+  sourceType?: 'blog' | 'reddit';
 }
 
 export interface ScrapedContent {

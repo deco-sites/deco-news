@@ -5,7 +5,7 @@ export interface Props {
   /**
    * @title Limite de itens
    * @description Número máximo de notícias para retornar
-   * @default 50
+   * @default 100
    */
   limit?: number;
 }
@@ -21,6 +21,32 @@ export interface ArticleDB {
   source_title?: string;
   created_at?: string;
   updated_at?: string;
+}
+
+// Tipo para conteúdo do Reddit
+export interface RedditContentDB {
+  id: number;
+  title: string;
+  url: string;
+  selftext?: string;
+  subreddit?: string;
+  author?: string;
+  score?: number;
+  num_comments?: number;
+  created_utc?: string;
+  scraped_at?: string;
+  updated_at?: string;
+}
+
+// Tipo unificado para ambas as fontes
+export interface UnifiedContent {
+  id: number;
+  title: string;
+  url: string;
+  content?: string;
+  source?: string;
+  updated_at?: string;
+  source_type: 'blog' | 'reddit';
 }
 
 /**
@@ -44,25 +70,82 @@ async function loader(
   props: Props,
   _req: Request,
 ): Promise<NewsItem[]> {
-  const { limit = 50 } = props;
+  const { limit = 100 } = props;
 
   try {
     const db = getDatabase();
     
-    // Busca artigos do banco
-    const result = await db.query<ArticleDB>(`
-      SELECT * FROM contents 
+    // Divide o limite entre as duas fontes para garantir diversidade
+    const limitPerSource = Math.ceil(limit / 2);
+    
+    // Busca blogs
+    const blogsResult = await db.query<UnifiedContent>(`
+      SELECT 
+        id,
+        article_title as title,
+        article_url as url,
+        summary as content,
+        source_title as source,
+        updated_at,
+        'blog' as source_type
+      FROM contents
       ORDER BY updated_at DESC
-      LIMIT ${limit}
+      LIMIT ${limitPerSource}
     `);
 
-    if (!result.success) {
-      console.error("❌ [Loader] Erro ao buscar artigos:", result.error?.message);
-      return [];
+    // Busca Reddit
+    const redditResult = await db.query<UnifiedContent>(`
+      SELECT 
+        id,
+        title,
+        url,
+        selftext as content,
+        COALESCE('r/' || subreddit, 'Reddit') as source,
+        COALESCE(updated_at, scraped_at) as updated_at,
+        'reddit' as source_type
+      FROM reddit_content_scrape
+      ORDER BY COALESCE(updated_at, scraped_at) DESC
+      LIMIT ${limitPerSource}
+    `);
+
+    if (!blogsResult.success) {
+      console.error("❌ [Loader] Erro ao buscar blogs:", blogsResult.error?.message);
+    }
+    
+    if (!redditResult.success) {
+      console.error("❌ [Loader] Erro ao buscar Reddit:", redditResult.error?.message);
     }
 
-    const items = (result.data ?? []).map(toNewsItem);
+    // Combina os resultados
+    const allItems = [
+      ...(blogsResult.data ?? []),
+      ...(redditResult.data ?? []),
+    ];
 
+    // Ordena todos por data
+    allItems.sort((a, b) => {
+      const dateA = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+      const dateB = b.updated_at ? new Date(b.updated_at).getTime() : 0;
+      return dateB - dateA;
+    });
+
+    // Aplica o limite final
+    const limitedItems = allItems.slice(0, limit);
+    
+    console.log(`📊 [Loader] Blogs: ${blogsResult.data?.length || 0}, Reddit: ${redditResult.data?.length || 0}`);
+    console.log(`📦 [Loader] Total após mesclar e limitar: ${limitedItems.length}`);
+
+    // Converte UnifiedContent para NewsItem
+    const items = limitedItems.map((item): NewsItem => ({
+      title: item.title,
+      url: item.url,
+      content: item.content,
+      source: item.source,
+      publishedAt: item.updated_at,
+      sourceType: item.source_type,
+    }));
+
+    console.log(`✅ [Loader] ${items.length} itens carregados (blogs + Reddit)`);
     return items;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
