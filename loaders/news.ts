@@ -4,8 +4,8 @@ import type { NewsItem } from "site/types/news.ts";
 export interface Props {
   /**
    * @title Limite de itens
-   * @description Número máximo de notícias para retornar
-   * @default 100
+   * @description Número máximo de notícias para retornar (0 = sem limite)
+   * @default 0
    */
   limit?: number;
 }
@@ -70,13 +70,15 @@ async function loader(
   props: Props,
   _req: Request,
 ): Promise<NewsItem[]> {
-  const { limit = 100 } = props;
+  const { limit = 0 } = props;
 
   try {
     const db = getDatabase();
     
-    // Divide o limite entre as duas fontes para garantir diversidade
-    const limitPerSource = Math.ceil(limit / 2);
+    // Se limit for 0, busca TODOS os itens
+    // Se limit > 0, divide entre as fontes
+    const hasLimit = limit > 0;
+    const limitPerSource = hasLimit ? Math.ceil(limit / 2) : 999999;
     
     // Busca blogs
     const blogsResult = await db.query<UnifiedContent>(`
@@ -90,7 +92,7 @@ async function loader(
         'blog' as source_type
       FROM contents
       ORDER BY updated_at DESC
-      LIMIT ${limitPerSource}
+      ${hasLimit ? `LIMIT ${limitPerSource}` : ''}
     `);
 
     // Busca Reddit
@@ -105,7 +107,7 @@ async function loader(
         'reddit' as source_type
       FROM reddit_content_scrape
       ORDER BY COALESCE(updated_at, scraped_at) DESC
-      LIMIT ${limitPerSource}
+      ${hasLimit ? `LIMIT ${limitPerSource}` : ''}
     `);
 
     if (!blogsResult.success) {
@@ -129,8 +131,8 @@ async function loader(
       return dateB - dateA;
     });
 
-    // Aplica o limite final
-    const limitedItems = allItems.slice(0, limit);
+    // Aplica o limite final (se houver)
+    const limitedItems = hasLimit ? allItems.slice(0, limit) : allItems;
     
     console.log(`📊 [Loader] Blogs: ${blogsResult.data?.length || 0}, Reddit: ${redditResult.data?.length || 0}`);
     console.log(`📦 [Loader] Total após mesclar e limitar: ${limitedItems.length}`);

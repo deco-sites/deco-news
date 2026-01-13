@@ -111,6 +111,11 @@ export interface Props {
    * @hide
    */
   error?: string;
+  /**
+   * @title Filtro atual
+   * @hide
+   */
+  currentFilter?: string;
 }
 
 /**
@@ -352,11 +357,8 @@ export default function News({
   items = [],
   loading = false,
   error,
+  currentFilter = 'all',
 }: Props) {
-  // Estado do filtro (usando query string para persistência)
-  const currentFilter = typeof globalThis !== 'undefined' && globalThis.location
-    ? new URLSearchParams(globalThis.location.search).get('filter') || 'all'
-    : 'all';
 
   // Função para filtrar itens
   const filteredItems = items.filter(item => {
