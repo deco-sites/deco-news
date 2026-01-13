@@ -46,7 +46,7 @@ export interface UnifiedContent {
   content?: string;
   source?: string;
   updated_at?: string;
-  source_type: 'blog' | 'reddit';
+  source_category: 'trendsetters' | 'enterprise' | 'mcp-startups' | 'community';
 }
 
 /**
@@ -81,6 +81,8 @@ async function loader(
     const limitPerSource = hasLimit ? Math.ceil(limit / 2) : 999999;
     
     // Busca blogs
+    // TODO: Quando a coluna source_category existir na tabela contents, usar:
+    // COALESCE(source_category, 'trendsetters') as source_category
     const blogsResult = await db.query<UnifiedContent>(`
       SELECT 
         id,
@@ -89,13 +91,13 @@ async function loader(
         summary as content,
         source_title as source,
         updated_at,
-        'blog' as source_type
+        'trendsetters' as source_category
       FROM contents
       ORDER BY updated_at DESC
       ${hasLimit ? `LIMIT ${limitPerSource}` : ''}
     `);
 
-    // Busca Reddit
+    // Busca Reddit - por padrão é 'community', mas pode ter source_category customizado
     const redditResult = await db.query<UnifiedContent>(`
       SELECT 
         id,
@@ -104,7 +106,7 @@ async function loader(
         selftext as content,
         COALESCE('r/' || subreddit, 'Reddit') as source,
         COALESCE(updated_at, scraped_at) as updated_at,
-        'reddit' as source_type
+        'community' as source_category
       FROM reddit_content_scrape
       ORDER BY COALESCE(updated_at, scraped_at) DESC
       ${hasLimit ? `LIMIT ${limitPerSource}` : ''}
@@ -144,7 +146,7 @@ async function loader(
       content: item.content,
       source: item.source,
       publishedAt: item.updated_at,
-      sourceType: item.source_type,
+      sourceCategory: item.source_category,
     }));
 
     console.log(`✅ [Loader] ${items.length} itens carregados (blogs + Reddit)`);

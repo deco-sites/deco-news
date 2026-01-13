@@ -1,4 +1,5 @@
 import type { NewsItem } from "site/types/news.ts";
+import FilterTabs from "site/islands/FilterTabs.tsx";
 
 /**
  * Retorna o início da semana (segunda-feira) para uma data
@@ -111,11 +112,6 @@ export interface Props {
    * @hide
    */
   error?: string;
-  /**
-   * @title Filtro atual
-   * @hide
-   */
-  currentFilter?: string;
 }
 
 /**
@@ -229,13 +225,16 @@ function NewsCard({ item }: { item: NewsItem }) {
   const cleanDescription = item.description ? cleanContent(item.description) : '';
   const cleanContentText = item.content ? cleanContent(item.content) : '';
   const displayText = cleanDescription || cleanContentText;
-  const isReddit = item.sourceType === 'reddit';
+  const category = item.sourceCategory || 'trendsetters';
 
   return (
-    <a
-    href={item.url}
-    target="_blank"
-    rel="noopener noreferrer" class={`group news-card flex flex-col h-full cursor-pointer ${isReddit ? 'reddit-card' : ''}`}>
+    <div class="news-card-wrapper" data-category={category}>
+      <a
+        href={item.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="group news-card flex flex-col h-full cursor-pointer"
+      >
       {item.image && (
         <div class="aspect-[16/10] overflow-hidden bg-neutral-100">
           <img
@@ -248,12 +247,37 @@ function NewsCard({ item }: { item: NewsItem }) {
       )}
       <div class="flex flex-col flex-1 p-6">
         <div class="flex items-center gap-2 mb-4">
-          {isReddit && (
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold bg-orange-500/10 text-orange-600 rounded-full border border-orange-200">
-              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/>
+          {/* Badge da categoria */}
+          {item.sourceCategory === 'trendsetters' && (
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold bg-purple-500/10 text-purple-600 rounded-full border border-purple-200">
+              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
               </svg>
-              Reddit
+              Trendsetters
+            </span>
+          )}
+          {item.sourceCategory === 'enterprise' && (
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold bg-blue-500/10 text-blue-600 rounded-full border border-blue-200">
+              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clip-rule="evenodd"/>
+              </svg>
+              Enterprise
+            </span>
+          )}
+          {item.sourceCategory === 'mcp-startups' && (
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold bg-emerald-500/10 text-emerald-600 rounded-full border border-emerald-200">
+              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/>
+              </svg>
+              MCP Startups
+            </span>
+          )}
+          {item.sourceCategory === 'community' && (
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold bg-orange-500/10 text-orange-600 rounded-full border border-orange-200">
+              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"/>
+              </svg>
+              Community
             </span>
           )}
           {item.category && (
@@ -299,6 +323,7 @@ function NewsCard({ item }: { item: NewsItem }) {
         </div>
       </div>
     </a>
+    </div>
   );
 }
 
@@ -357,20 +382,16 @@ export default function News({
   items = [],
   loading = false,
   error,
-  currentFilter = 'all',
 }: Props) {
 
-  // Função para filtrar itens
-  const filteredItems = items.filter(item => {
-    if (currentFilter === 'all') return true;
-    if (currentFilter === 'reddit') return item.sourceType === 'reddit';
-    if (currentFilter === 'blogs') return item.sourceType === 'blog';
-    return true;
-  });
-
-  // Contadores
-  const redditCount = items.filter(i => i.sourceType === 'reddit').length;
-  const blogCount = items.filter(i => i.sourceType === 'blog').length;
+  // Contadores para passar para a island de filtro
+  const counts = {
+    all: items.length,
+    trendsetters: items.filter(i => i.sourceCategory === 'trendsetters').length,
+    enterprise: items.filter(i => i.sourceCategory === 'enterprise').length,
+    "mcp-startups": items.filter(i => i.sourceCategory === 'mcp-startups').length,
+    community: items.filter(i => i.sourceCategory === 'community').length,
+  };
 
   return (
     <div class="min-h-screen bg-[#F5F5F0]">
@@ -458,67 +479,34 @@ export default function News({
       {/* Content */}
       <section class="pb-24 px-6">
         <div class="container mx-auto max-w-7xl">
-          {/* Filter Tabs */}
+          {/* Filter Tabs - Island interativa */}
           {!loading && items.length > 0 && (
             <div class="mb-12">
-              <div class="inline-flex items-center gap-2 p-1.5 bg-white rounded-2xl border border-neutral-200/60 shadow-sm">
-                <a
-                  href="?filter=all"
-                  class={`px-6 py-3 rounded-xl font-semibold text-sm transition-all ${
-                    currentFilter === 'all'
-                      ? 'bg-neutral-900 text-white shadow-md'
-                      : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
-                  }`}
-                >
-                  Todos
-                  <span class={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                    currentFilter === 'all' 
-                      ? 'bg-white/20 text-white' 
-                      : 'bg-neutral-100 text-neutral-500'
-                  }`}>
-                    {items.length}
-                  </span>
-                </a>
-                <a
-                  href="?filter=blogs"
-                  class={`px-6 py-3 rounded-xl font-semibold text-sm transition-all ${
-                    currentFilter === 'blogs'
-                      ? 'bg-lime-500 text-white shadow-md'
-                      : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
-                  }`}
-                >
-                  Blogs
-                  <span class={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                    currentFilter === 'blogs' 
-                      ? 'bg-white/20 text-white' 
-                      : 'bg-neutral-100 text-neutral-500'
-                  }`}>
-                    {blogCount}
-                  </span>
-                </a>
-                <a
-                  href="?filter=reddit"
-                  class={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all ${
-                    currentFilter === 'reddit'
-                      ? 'bg-orange-500 text-white shadow-md'
-                      : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
-                  }`}
-                >
-                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/>
-                  </svg>
-                  Reddit
-                  <span class={`ml-1 px-2 py-0.5 rounded-full text-xs ${
-                    currentFilter === 'reddit' 
-                      ? 'bg-white/20 text-white' 
-                      : 'bg-neutral-100 text-neutral-500'
-                  }`}>
-                    {redditCount}
-                  </span>
-                </a>
-              </div>
+              <FilterTabs counts={counts} />
             </div>
           )}
+
+          {/* CSS para controlar visibilidade dos cards baseado no filtro */}
+          <style dangerouslySetInnerHTML={{ __html: `
+            /* Por padrão (filter-all), mostra todos */
+            #news-grid-container .news-card-wrapper {
+              display: block;
+            }
+            
+            /* Quando filtro específico é aplicado, esconde todos e mostra só os que batem */
+            #news-grid-container.filter-trendsetters .news-card-wrapper:not([data-category="trendsetters"]) {
+              display: none;
+            }
+            #news-grid-container.filter-enterprise .news-card-wrapper:not([data-category="enterprise"]) {
+              display: none;
+            }
+            #news-grid-container.filter-mcp-startups .news-card-wrapper:not([data-category="mcp-startups"]) {
+              display: none;
+            }
+            #news-grid-container.filter-community .news-card-wrapper:not([data-category="community"]) {
+              display: none;
+            }
+          `}} />
 
           {/* Error State */}
           {error && (
@@ -535,12 +523,12 @@ export default function News({
           {/* Content */}
           {loading ? (
             <LoadingState />
-          ) : filteredItems.length === 0 ? (
+          ) : items.length === 0 ? (
             <EmptyState />
           ) : (
-            <div class="space-y-16">
-              {Array.from(groupByWeek(filteredItems)).map(([weekKey, { label, items: weekItems }]) => (
-                <div key={weekKey} class="space-y-8">
+            <div id="news-grid-container" class="space-y-16 filter-all">
+              {Array.from(groupByWeek(items)).map(([weekKey, { label, items: weekItems }]) => (
+                <div key={weekKey} class="space-y-8 week-section">
                   {/* Week Header */}
                   <div class="flex items-center gap-6">
                     <div class="flex items-center gap-4">
