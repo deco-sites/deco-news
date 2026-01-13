@@ -10,7 +10,7 @@
         "subtitle": "As últimas notícias do mundo tech, curadas especialmente para você",
         "items": {
           "__resolveType": "site/loaders/news.ts",
-          "limit": 50
+          "limit": 150
         }
       }
     },
