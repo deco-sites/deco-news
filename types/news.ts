@@ -22,6 +22,10 @@ export interface NewsItem {
   source?: string;
   category?: string;
   sourceCategory?: SourceCategory;
+  /**
+   * Score de relevância do post (maior = mais relevante)
+   */
+  postScore?: number;
 }
 
 export interface ScrapedContent {

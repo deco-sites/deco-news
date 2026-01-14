@@ -376,6 +376,52 @@ function LoadingState() {
   );
 }
 
+/**
+ * Loading fallback para Async Rendering do deco.cx
+ */
+export function LoadingFallback() {
+  return (
+    <div class="min-h-screen bg-[#F5F5F0]">
+      {/* Header Skeleton */}
+      <header class="sticky top-0 z-50 bg-[#F5F5F0]/80 backdrop-blur-xl border-b border-neutral-200/50">
+        <div class="container mx-auto max-w-7xl px-6">
+          <div class="flex items-center justify-between h-16">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 bg-lime-500 rounded-lg flex items-center justify-center">
+                <span class="text-white font-bold text-lg">D</span>
+              </div>
+              <span class="font-bold text-neutral-900 text-lg">News</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Hero Skeleton */}
+      <section class="pt-6 pb-12 md:pt-8 md:pb-16 px-6">
+        <div class="container mx-auto max-w-7xl">
+          <div class="max-w-5xl animate-pulse">
+            <div class="h-8 w-48 bg-neutral-200 rounded-full mb-8" />
+            <div class="h-16 md:h-24 w-full bg-neutral-200 rounded-2xl mb-4" />
+            <div class="h-16 md:h-24 w-3/4 bg-neutral-200 rounded-2xl mb-8" />
+            <div class="flex gap-3">
+              <div class="h-10 w-32 bg-neutral-200 rounded-full" />
+              <div class="h-10 w-40 bg-neutral-200 rounded-full" />
+              <div class="h-10 w-36 bg-neutral-200 rounded-full" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Content Skeleton */}
+      <section class="pb-24 px-6">
+        <div class="container mx-auto max-w-7xl">
+          <LoadingState />
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export default function News({
   title: _title = "Deco News",
   subtitle,

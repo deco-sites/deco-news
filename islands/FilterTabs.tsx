@@ -67,39 +67,48 @@ export default function FilterTabs({ counts }: Props) {
     container.classList.add(`filter-${filter}`);
   }, [currentFilter.value]);
 
-  // Filtros disponíveis (com count > 0)
-  const availableFilters: FilterType[] = (
-    ["all", "trendsetters", "enterprise", "mcp-startups", "community"] as FilterType[]
-  ).filter((f) => counts[f] > 0);
+  // Todos os filtros (sempre exibe os 4, mesmo com count 0)
+  const allFilters: FilterType[] = ["all", "trendsetters", "enterprise", "mcp-startups", "community"];
 
   return (
     <div class="flex flex-wrap items-center gap-2 p-1.5 bg-white rounded-2xl border border-neutral-200/60 shadow-sm">
-      {availableFilters.map((filter) => {
+      {allFilters.map((filter) => {
         const config = CATEGORY_CONFIG[filter];
         const isActive = currentFilter.value === filter;
+        const count = counts[filter];
+        const hasItems = count > 0;
+        
         return (
           <button
             key={filter}
             type="button"
             onClick={() => (currentFilter.value = filter)}
+            disabled={filter !== "all" && !hasItems}
             class={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all ${
               isActive
                 ? `${config.bgActive} text-white shadow-md`
-                : "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50"
+                : hasItems
+                  ? "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50"
+                  : "text-neutral-300 cursor-not-allowed"
             }`}
           >
             {config.iconSvg && (
-              <span dangerouslySetInnerHTML={{ __html: config.iconSvg }} />
+              <span 
+                dangerouslySetInnerHTML={{ __html: config.iconSvg }} 
+                class={!hasItems && !isActive ? "opacity-40" : ""}
+              />
             )}
             {config.label}
             <span
               class={`ml-1 px-2 py-0.5 rounded-full text-xs ${
                 isActive
                   ? "bg-white/20 text-white"
-                  : "bg-neutral-100 text-neutral-500"
+                  : hasItems
+                    ? "bg-neutral-100 text-neutral-500"
+                    : "bg-neutral-50 text-neutral-300"
               }`}
             >
-              {counts[filter]}
+              {count}
             </span>
           </button>
         );

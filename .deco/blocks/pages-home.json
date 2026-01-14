@@ -7,7 +7,7 @@
       "section": {
         "__resolveType": "site/sections/News.tsx",
         "title": "📰 Deco News",
-        "subtitle": "As últimas notícias do mundo tech, curadas especialmente para você",
+        "subtitle": "The latest tech news, curated just for you",
         "items": {
           "__resolveType": "site/loaders/news.ts",
           "limit": 150
