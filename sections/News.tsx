@@ -222,13 +222,16 @@ function NewsCard({ item }: { item: NewsItem }) {
     return <DecoArticleCard item={item} />;
   }
 
+  console.log(item);
+
   const cleanDescription = item.description ? cleanContent(item.description) : '';
   const cleanContentText = item.content ? cleanContent(item.content) : '';
   const displayText = cleanDescription || cleanContentText;
   const category = item.sourceCategory || 'trendsetters';
+  const score = item.postScore ?? 0;
 
   return (
-    <div class="news-card-wrapper" data-category={category}>
+    <div class="news-card-wrapper" data-category={category} data-score={score}>
       <a
         href={item.url}
         target="_blank"
@@ -295,10 +298,10 @@ function NewsCard({ item }: { item: NewsItem }) {
         <div class="flex items-center justify-between pt-4 border-t border-neutral-100 mt-auto">
           <div class="flex items-center gap-2 text-xs text-neutral-400">
             {item.source && <span class="font-medium">{item.source}</span>}
-            {item.publishedAt && (
+            {item.createdAt && (
               <>
                 {item.source && <span>•</span>}
-                <time>{new Date(item.publishedAt).toLocaleDateString("en-US", { day: "numeric", month: "short" })}</time>
+                <time>{new Date(item.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</time>
               </>
             )}
           </div>

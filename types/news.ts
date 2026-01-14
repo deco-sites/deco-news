@@ -20,6 +20,7 @@ export interface NewsItem {
   author?: string;
   publishedAt?: string;
   source?: string;
+  createdAt?: string;
   category?: string;
   sourceCategory?: SourceCategory;
   /**

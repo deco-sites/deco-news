@@ -3,6 +3,7 @@ import { useEffect } from "preact/hooks";
 import type { SourceCategory } from "site/types/news.ts";
 
 type FilterType = "all" | SourceCategory;
+type SortOrder = "none" | "desc" | "asc";
 
 interface Props {
   counts: {
@@ -47,6 +48,7 @@ const CATEGORY_CONFIG: Record<
 
 export default function FilterTabs({ counts }: Props) {
   const currentFilter = useSignal<FilterType>("all");
+  const sortOrder = useSignal<SortOrder>("none");
 
   // Aplica o filtro nos cards usando data-attributes
   useEffect(() => {
@@ -67,52 +69,146 @@ export default function FilterTabs({ counts }: Props) {
     container.classList.add(`filter-${filter}`);
   }, [currentFilter.value]);
 
+  // Reordena os cards por post_score
+  useEffect(() => {
+    const order = sortOrder.value;
+    const container = document.getElementById("news-grid-container");
+    if (!container) return;
+
+    // Encontra todos os grids de cards (dentro de cada semana)
+    const weekSections = container.querySelectorAll(".week-section");
+    
+    weekSections.forEach((section) => {
+      const grid = section.querySelector(".grid");
+      if (!grid) return;
+
+      const cards = Array.from(grid.querySelectorAll(".news-card-wrapper"));
+      
+      if (order === "none") {
+        // Restaura ordem original usando o índice armazenado
+        cards.sort((a, b) => {
+          const indexA = parseInt(a.getAttribute("data-original-index") || "0");
+          const indexB = parseInt(b.getAttribute("data-original-index") || "0");
+          return indexA - indexB;
+        });
+      } else {
+        // Armazena índice original se ainda não tiver
+        cards.forEach((card, i) => {
+          if (!card.hasAttribute("data-original-index")) {
+            card.setAttribute("data-original-index", String(i));
+          }
+        });
+
+        // Ordena por score
+        cards.sort((a, b) => {
+          const scoreA = parseFloat(a.getAttribute("data-score") || "0");
+          const scoreB = parseFloat(b.getAttribute("data-score") || "0");
+          return order === "desc" ? scoreB - scoreA : scoreA - scoreB;
+        });
+      }
+
+      // Reinsere os cards na nova ordem
+      cards.forEach((card) => grid.appendChild(card));
+    });
+  }, [sortOrder.value]);
+
   // Todos os filtros (sempre exibe os 4, mesmo com count 0)
   const allFilters: FilterType[] = ["all", "trendsetters", "enterprise", "mcp-startups", "community"];
 
+  const cycleSortOrder = () => {
+    const current = sortOrder.value;
+    if (current === "none") {
+      sortOrder.value = "desc";
+    } else if (current === "desc") {
+      sortOrder.value = "asc";
+    } else {
+      sortOrder.value = "none";
+    }
+  };
+
+  const getSortIcon = () => {
+    switch (sortOrder.value) {
+      case "desc":
+        return `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>`;
+      case "asc":
+        return `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>`;
+      default:
+        return `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>`;
+    }
+  };
+
+  const getSortLabel = () => {
+    switch (sortOrder.value) {
+      case "desc":
+        return "Mais relevante";
+      case "asc":
+        return "Menos relevante";
+      default:
+        return "Relevância";
+    }
+  };
+
   return (
-    <div class="flex flex-wrap items-center gap-2 p-1.5 bg-white rounded-2xl border border-neutral-200/60 shadow-sm">
-      {allFilters.map((filter) => {
-        const config = CATEGORY_CONFIG[filter];
-        const isActive = currentFilter.value === filter;
-        const count = counts[filter];
-        const hasItems = count > 0;
-        
-        return (
-          <button
-            key={filter}
-            type="button"
-            onClick={() => (currentFilter.value = filter)}
-            disabled={filter !== "all" && !hasItems}
-            class={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all ${
-              isActive
-                ? `${config.bgActive} text-white shadow-md`
-                : hasItems
-                  ? "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50"
-                  : "text-neutral-300 cursor-not-allowed"
-            }`}
-          >
-            {config.iconSvg && (
-              <span 
-                dangerouslySetInnerHTML={{ __html: config.iconSvg }} 
-                class={!hasItems && !isActive ? "opacity-40" : ""}
-              />
-            )}
-            {config.label}
-            <span
-              class={`ml-1 px-2 py-0.5 rounded-full text-xs ${
+    <div class="flex flex-wrap items-center gap-4">
+      {/* Filtros de categoria */}
+      <div class="flex flex-wrap items-center gap-2 p-1.5 bg-white rounded-2xl border border-neutral-200/60 shadow-sm">
+        {allFilters.map((filter) => {
+          const config = CATEGORY_CONFIG[filter];
+          const isActive = currentFilter.value === filter;
+          const count = counts[filter];
+          const hasItems = count > 0;
+          
+          return (
+            <button
+              key={filter}
+              type="button"
+              onClick={() => (currentFilter.value = filter)}
+              disabled={filter !== "all" && !hasItems}
+              class={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all ${
                 isActive
-                  ? "bg-white/20 text-white"
+                  ? `${config.bgActive} text-white shadow-md`
                   : hasItems
-                    ? "bg-neutral-100 text-neutral-500"
-                    : "bg-neutral-50 text-neutral-300"
+                    ? "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50"
+                    : "text-neutral-300 cursor-not-allowed"
               }`}
             >
-              {count}
-            </span>
-          </button>
-        );
-      })}
+              {config.iconSvg && (
+                <span 
+                  dangerouslySetInnerHTML={{ __html: config.iconSvg }} 
+                  class={!hasItems && !isActive ? "opacity-40" : ""}
+                />
+              )}
+              {config.label}
+              <span
+                class={`ml-1 px-2 py-0.5 rounded-full text-xs ${
+                  isActive
+                    ? "bg-white/20 text-white"
+                    : hasItems
+                      ? "bg-neutral-100 text-neutral-500"
+                      : "bg-neutral-50 text-neutral-300"
+                }`}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Filtro de ordenação por relevância */}
+      <button
+        type="button"
+        onClick={cycleSortOrder}
+        class={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm transition-all border ${
+          sortOrder.value !== "none"
+            ? "bg-amber-500 text-white border-amber-500 shadow-md"
+            : "bg-white text-neutral-600 border-neutral-200/60 hover:text-neutral-900 hover:bg-neutral-50"
+        }`}
+        title="Clique para alternar: Sem filtro → Mais relevante → Menos relevante"
+      >
+        <span dangerouslySetInnerHTML={{ __html: getSortIcon() }} />
+        {getSortLabel()}
+      </button>
     </div>
   );
 }

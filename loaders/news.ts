@@ -33,7 +33,7 @@ export interface RedditContentDB {
   author?: string;
   score?: number;
   num_comments?: number;
-  created_utc?: string;
+  created_at?: string;
   scraped_at?: string;
   updated_at?: string;
 }
@@ -45,6 +45,7 @@ export interface UnifiedContent {
   url: string;
   content?: string;
   source?: string;
+  created_at?: string;
   updated_at?: string;
   type?: string;
   post_score?: number;
@@ -67,6 +68,7 @@ function normalizeSourceCategory(type?: string): 'trendsetters' | 'enterprise' |
     case 'mcp-startups':
     case 'mcp startups':
     case 'mcpstartups':
+    case 'mcp-first startups':
       return 'mcp-startups';
     case 'community':
       return 'community';
@@ -117,6 +119,7 @@ async function loader(
         summary as content,
         source_title as source,
         updated_at,
+        created_at,
         type,
         post_score
       FROM contents
@@ -133,10 +136,11 @@ async function loader(
         selftext as content,
         COALESCE('r/' || subreddit, 'Reddit') as source,
         COALESCE(updated_at, scraped_at) as updated_at,
+        datetime(created_at, 'unixepoch') as created_at,
         type,
         post_score
       FROM reddit_content_scrape
-      ORDER BY COALESCE(post_score, 0) DESC, COALESCE(updated_at, scraped_at) DESC
+      ORDER BY COALESCE(post_score, 0) DESC, COALESCE(created_at, scraped_at) DESC
       ${hasLimit ? `LIMIT ${limitPerSource}` : ''}
     `);
 
@@ -146,14 +150,6 @@ async function loader(
     
     if (!redditResult.success) {
       console.error("❌ [Loader] Erro ao buscar Reddit:", redditResult.error?.message);
-    } else {
-      // Log detalhado dos dados do Reddit
-      console.log("🔍 [Loader] === DADOS DO REDDIT ===");
-      console.log(`🔢 [Loader] Total de posts: ${redditResult.data?.length || 0}`);
-      redditResult.data?.forEach((item) => {
-        console.log(`${JSON.stringify(item, null, 2)}`);
-      });
-      console.log("🔍 [Loader] === FIM DADOS REDDIT ===\n");
     }
 
     // Combina os resultados
@@ -191,6 +187,7 @@ async function loader(
       content: item.content,
       source: item.source,
       publishedAt: item.updated_at,
+      createdAt: item.created_at,
       sourceCategory: normalizeSourceCategory(item.type),
       postScore: item.post_score,
     }));

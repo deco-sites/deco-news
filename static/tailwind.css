@@ -782,23 +782,50 @@ input[type=number] {
   --tw-content: attr(aria-label);
   content: var(--tw-content);
 }
+.\!card{
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border-radius: var(--rounded-box, 1rem) !important;
+}
 .card{
   position: relative;
   display: flex;
   flex-direction: column;
   border-radius: var(--rounded-box, 1rem);
 }
+.\!card:focus{
+  outline: 2px solid transparent !important;
+  outline-offset: 2px !important;
+}
 .card:focus{
   outline: 2px solid transparent;
   outline-offset: 2px;
+}
+.\!card figure{
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 .card figure{
   display: flex;
   align-items: center;
   justify-content: center;
 }
+.\!card.image-full{
+  display: grid !important;
+}
 .card.image-full{
   display: grid;
+}
+.\!card.image-full:before{
+  position: relative !important;
+  content: "" !important;
+  z-index: 10 !important;
+  border-radius: var(--rounded-box, 1rem) !important;
+  --tw-bg-opacity: 1 !important;
+  background-color: var(--fallback-n,oklch(var(--n)/var(--tw-bg-opacity))) !important;
+  opacity: 0.75 !important;
 }
 .card.image-full:before{
   position: relative;
@@ -809,15 +836,36 @@ input[type=number] {
   background-color: var(--fallback-n,oklch(var(--n)/var(--tw-bg-opacity)));
   opacity: 0.75;
 }
+.\!card.image-full:before,
+    .\!card.image-full > *{
+  grid-column-start: 1 !important;
+  grid-row-start: 1 !important;
+}
 .card.image-full:before,
     .card.image-full > *{
   grid-column-start: 1;
   grid-row-start: 1;
 }
+.\!card.image-full:before,
+    .\!card.image-full > *{
+  grid-column-start: 1 !important;
+  grid-row-start: 1 !important;
+}
+.\!card.image-full > figure img{
+  height: 100% !important;
+  -o-object-fit: cover !important;
+     object-fit: cover !important;
+}
 .card.image-full > figure img{
   height: 100%;
   -o-object-fit: cover;
      object-fit: cover;
+}
+.\!card.image-full > .card-body{
+  position: relative !important;
+  z-index: 20 !important;
+  --tw-text-opacity: 1 !important;
+  color: var(--fallback-nc,oklch(var(--nc)/var(--tw-text-opacity))) !important;
 }
 .card.image-full > .card-body{
   position: relative;
@@ -1653,12 +1701,26 @@ input.tab:checked + .tab-content,
     transform: scale(1);
   }
 }
+.\!card :where(figure:first-child){
+  overflow: hidden !important;
+  border-start-start-radius: inherit !important;
+  border-start-end-radius: inherit !important;
+  border-end-start-radius: unset !important;
+  border-end-end-radius: unset !important;
+}
 .card :where(figure:first-child){
   overflow: hidden;
   border-start-start-radius: inherit;
   border-start-end-radius: inherit;
   border-end-start-radius: unset;
   border-end-end-radius: unset;
+}
+.\!card :where(figure:last-child){
+  overflow: hidden !important;
+  border-start-start-radius: unset !important;
+  border-start-end-radius: unset !important;
+  border-end-start-radius: inherit !important;
+  border-end-end-radius: inherit !important;
 }
 .card :where(figure:last-child){
   overflow: hidden;
@@ -1667,19 +1729,37 @@ input.tab:checked + .tab-content,
   border-end-start-radius: inherit;
   border-end-end-radius: inherit;
 }
+.\!card:focus-visible{
+  outline: 2px solid currentColor !important;
+  outline-offset: 2px !important;
+}
 .card:focus-visible{
   outline: 2px solid currentColor;
   outline-offset: 2px;
+}
+.\!card.bordered{
+  border-width: 1px !important;
+  --tw-border-opacity: 1 !important;
+  border-color: var(--fallback-b2,oklch(var(--b2)/var(--tw-border-opacity))) !important;
 }
 .card.bordered{
   border-width: 1px;
   --tw-border-opacity: 1;
   border-color: var(--fallback-b2,oklch(var(--b2)/var(--tw-border-opacity)));
 }
+.\!card.compact .card-body{
+  padding: 1rem !important;
+  font-size: 0.875rem !important;
+  line-height: 1.25rem !important;
+}
 .card.compact .card-body{
   padding: 1rem;
   font-size: 0.875rem;
   line-height: 1.25rem;
+}
+.\!card.image-full :where(figure){
+  overflow: hidden !important;
+  border-radius: inherit !important;
 }
 .card.image-full :where(figure){
   overflow: hidden;
@@ -2610,6 +2690,9 @@ input.tab:checked + .tab-content,
 .table{
   display: table;
 }
+.\!grid{
+  display: grid !important;
+}
 .grid{
   display: grid;
 }
@@ -3106,6 +3189,10 @@ input.tab:checked + .tab-content,
 .border-t{
   border-top-width: 1px;
 }
+.border-amber-500{
+  --tw-border-opacity: 1;
+  border-color: rgb(245 158 11 / var(--tw-border-opacity));
+}
 .border-blue-200{
   --tw-border-opacity: 1;
   border-color: rgb(191 219 254 / var(--tw-border-opacity));
@@ -3156,6 +3243,10 @@ input.tab:checked + .tab-content,
 }
 .bg-\[var\(--bg-color\)\]{
   background-color: var(--bg-color);
+}
+.bg-amber-500{
+  --tw-bg-opacity: 1;
+  background-color: rgb(245 158 11 / var(--tw-bg-opacity));
 }
 .bg-base-100{
   --tw-bg-opacity: 1;
@@ -3311,6 +3402,10 @@ input.tab:checked + .tab-content,
 .px-4{
   padding-left: 1rem;
   padding-right: 1rem;
+}
+.px-5{
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
 }
 .px-6{
   padding-left: 1.5rem;
