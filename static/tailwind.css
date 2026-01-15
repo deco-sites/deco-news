@@ -1257,6 +1257,17 @@ input[type=number] {
 :where(.menu li) .badge{
   justify-self: end;
 }
+.navbar{
+  display: flex;
+  align-items: center;
+  padding: var(--navbar-padding, 0.5rem);
+  min-height: 4rem;
+  width: 100%;
+}
+:where(.navbar > *){
+  display: inline-flex;
+  align-items: center;
+}
 .radio{
   flex-shrink: 0;
   --chkbg: var(--bc);
@@ -2899,6 +2910,9 @@ input.tab:checked + .tab-content,
 }
 .w-\[522px\]{
   width: 522px;
+}
+.w-auto{
+  width: auto;
 }
 .w-full{
   width: 100%;

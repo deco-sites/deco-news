@@ -1,5 +1,6 @@
 import type { NewsItem } from "site/types/news.ts";
 import FilterTabs from "site/islands/FilterTabs.tsx";
+import { ImageWidget } from "apps/admin/widgets.ts";
 
 /**
  * Retorna o início da semana (segunda-feira) para uma data
@@ -87,6 +88,11 @@ function groupByWeek(items: NewsItem[]): Map<string, { label: string; items: New
 }
 
 export interface Props {
+  /**
+   * @title Logo
+   * @description Imagem do logo para o navbar
+   */
+  logo?: ImageWidget;
   /**
    * @title Título da seção
    * @default Deco News
@@ -426,6 +432,7 @@ export function LoadingFallback() {
 }
 
 export default function News({
+  logo,
   title: _title = "Deco News",
   subtitle,
   items = [],
@@ -450,10 +457,20 @@ export default function News({
           <div class="flex items-center justify-between h-16">
             {/* Logo */}
             <a href="/" class="flex items-center gap-2">
-              <div class="w-8 h-8 bg-lime-500 rounded-lg flex items-center justify-center">
-                <span class="text-white font-bold text-lg">D</span>
-              </div>
-              <span class="font-bold text-neutral-900 text-lg">News</span>
+              {logo ? (
+                <img 
+                  src={logo} 
+                  alt="Logo" 
+                  class="h-8 w-auto object-contain"
+                />
+              ) : (
+                <>
+                  <div class="w-8 h-8 bg-lime-500 rounded-lg flex items-center justify-center">
+                    <span class="text-white font-bold text-lg">D</span>
+                  </div>
+                  <span class="font-bold text-neutral-900 text-lg">News</span>
+                </>
+              )}
             </a>
 
             {/* Nav */}
