@@ -457,7 +457,14 @@ export default function News({
             </a>
 
             {/* Nav */}
-            
+            <nav class="hidden sm:flex items-center gap-6">
+              <a href="/" class="text-sm font-medium text-lime-600">
+                News
+              </a>
+              <a href="/ai-models" class="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors">
+                AI Models
+              </a>
+            </nav>
 
             {/* Actions */}
             <div class="flex items-center gap-3">

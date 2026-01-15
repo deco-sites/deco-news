@@ -4,21 +4,25 @@
 
 import * as $$$$$$$$$$$0 from "./apps/deco/htmx.ts";
 import * as $$$$$$$$$$$1 from "./apps/site.ts";
-import * as $$$0 from "./loaders/news.ts";
-import * as $$$$$$0 from "./sections/Footer.tsx";
-import * as $$$$$$1 from "./sections/ItWorks.tsx";
-import * as $$$$$$2 from "./sections/News.tsx";
-import * as $$$$$$3 from "./sections/Theme/Theme.tsx";
+import * as $$$0 from "./loaders/aiModels.ts";
+import * as $$$1 from "./loaders/news.ts";
+import * as $$$$$$0 from "./sections/AIModels.tsx";
+import * as $$$$$$1 from "./sections/Footer.tsx";
+import * as $$$$$$2 from "./sections/ItWorks.tsx";
+import * as $$$$$$3 from "./sections/News.tsx";
+import * as $$$$$$4 from "./sections/Theme/Theme.tsx";
 
 const manifest = {
   "loaders": {
-    "site/loaders/news.ts": $$$0,
+    "site/loaders/aiModels.ts": $$$0,
+    "site/loaders/news.ts": $$$1,
   },
   "sections": {
-    "site/sections/Footer.tsx": $$$$$$0,
-    "site/sections/ItWorks.tsx": $$$$$$1,
-    "site/sections/News.tsx": $$$$$$2,
-    "site/sections/Theme/Theme.tsx": $$$$$$3,
+    "site/sections/AIModels.tsx": $$$$$$0,
+    "site/sections/Footer.tsx": $$$$$$1,
+    "site/sections/ItWorks.tsx": $$$$$$2,
+    "site/sections/News.tsx": $$$$$$3,
+    "site/sections/Theme/Theme.tsx": $$$$$$4,
   },
   "apps": {
     "site/apps/deco/htmx.ts": $$$$$$$$$$$0,
