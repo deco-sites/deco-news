@@ -1,9 +1,10 @@
 import type { AIModel } from "site/types/aiModels.ts";
+import Header from "site/components/Header.tsx";
 
 export interface Props {
   /**
    * @title Título da seção
-   * @default Top AI Models
+   * @default Trending AI Models
    */
   title?: string;
   /**
@@ -334,19 +335,7 @@ function LoadingState() {
 export function LoadingFallback() {
   return (
     <div class="min-h-screen bg-[#F5F5F0]">
-      {/* Header Skeleton */}
-      <header class="sticky top-0 z-50 bg-[#F5F5F0]/80 backdrop-blur-xl border-b border-neutral-200/50">
-        <div class="container mx-auto max-w-7xl px-6">
-          <div class="flex items-center justify-between h-16">
-            <div class="flex items-center gap-2">
-              <div class="w-8 h-8 bg-lime-500 rounded-lg flex items-center justify-center">
-                <span class="text-white font-bold text-lg">D</span>
-              </div>
-              <span class="font-bold text-neutral-900 text-lg">News</span>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header activePage="ai-models" />
 
       {/* Hero Skeleton */}
       <section class="pt-6 pb-12 md:pt-8 md:pb-16 px-6">
@@ -370,7 +359,7 @@ export function LoadingFallback() {
 }
 
 export default function AIModels({
-  title = "Top AI Models",
+  title: _title = "Trending AI Models",
   subtitle,
   models = [],
   loading = false,
@@ -378,41 +367,7 @@ export default function AIModels({
 }: Props) {
   return (
     <div class="min-h-screen bg-[#F5F5F0]">
-      {/* Header */}
-      <header class="sticky top-0 z-50 bg-[#F5F5F0]/80 backdrop-blur-xl border-b border-neutral-200/50">
-        <div class="container mx-auto max-w-7xl px-6">
-          <div class="flex items-center justify-between h-16">
-            {/* Logo */}
-            <a href="/" class="flex items-center gap-2">
-              <div class="w-8 h-8 bg-lime-500 rounded-lg flex items-center justify-center">
-                <span class="text-white font-bold text-lg">D</span>
-              </div>
-              <span class="font-bold text-neutral-900 text-lg">News</span>
-            </a>
-
-            {/* Nav */}
-            <nav class="hidden sm:flex items-center gap-6">
-              <a href="/" class="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors">
-                News
-              </a>
-              <a href="/ai-models" class="text-sm font-medium text-lime-600">
-                AI Models
-              </a>
-            </nav>
-
-            {/* Actions */}
-            <div class="flex items-center gap-3">
-              <a
-                href="https://decocms.com"
-                target="_blank"
-                class="hidden sm:inline-flex items-center px-4 py-2 bg-neutral-900 text-white text-sm font-semibold rounded-xl hover:bg-neutral-800 transition-colors"
-              >
-                decocms
-              </a>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header activePage="ai-models" />
 
       {/* Hero */}
       <section class="pt-6 pb-12 md:pt-8 md:pb-16 px-6">
@@ -429,7 +384,7 @@ export default function AIModels({
               <span class="text-violet-500">Top</span>
               <span class="text-neutral-900"> AI </span>
               <span class="text-lime-500">Models</span>
-              <span class="text-neutral-900"> — ranked and analyzed.</span>
+              <span class="text-neutral-900"> — ranked weekly.</span>
             </h1>
 
             {/* Subtitle */}
@@ -439,7 +394,16 @@ export default function AIModels({
               </p>
             ) : (
               <p class="text-xl md:text-2xl text-neutral-500 max-w-3xl leading-relaxed">
-                Compare the most powerful AI models by performance, pricing, and capabilities.
+                Weekly updated ranking powered by{" "}
+                <a 
+                  href="https://llmstats.io" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  class=" hover:text-violet-600 underline underline-offset-2 transition-colors"
+                >
+                  llmStats
+                </a>
+                , a trusted source for AI model benchmarks and metrics.
               </p>
             )}
 

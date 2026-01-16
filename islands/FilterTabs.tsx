@@ -112,7 +112,7 @@ export default function FilterTabs({ counts }: Props) {
     });
   }, [sortOrder.value]);
 
-  // Todos os filtros (sempre exibe os 4, mesmo com count 0)
+  // Todos os filtros (sempre exibe todos, mesmo com count 0)
   const allFilters: FilterType[] = ["all", "trendsetters", "enterprise", "mcp-startups", "community"];
 
   const cycleSortOrder = () => {

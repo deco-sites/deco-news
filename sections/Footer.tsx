@@ -1,40 +1,18 @@
-import { ImageWidget } from "apps/admin/widgets.ts";
-import Image from "apps/website/components/Image.tsx";
-
-interface Props {
-  href?: string;
-  image?: ImageWidget;
-  alt?: string;
-  width?: number;
-  height?: number;
-  text?: string;
-}
-
-function Footer({
-  image =
-    "https://ozksgdmyrqcxcwhnbepg.supabase.co/storage/v1/object/public/assets/4959/d7aa9290-074f-417c-99c3-5b0587c8c2ee",
-  href = "https://deco.cx/",
-  text = "Made with",
-  alt = "Made with deco.cx",
-  height = 20,
-  width = 50,
-}: Props) {
+function Footer() {
   return (
     <div class="py-8 lg:px-0 px-6 fixed bottom-0 w-full mx-auto">
       <a
-        href={href}
-        class="flex flex-row gap-1 items-center justify-center text-xs"
+        href="https://deco.cx/"
+        class="flex flex-row gap-2 items-center justify-center text-sm font-medium"
         target="_blank"
       >
-        {text && <p>{text}</p>}
-        {image && (
-          <Image
-            src={image || ""}
-            alt={alt || ""}
-            height={height || 20}
-            width={width || 50}
-          />
-        )}
+        <img
+          src="https://assets.decocache.com/decocms/c6af6b61-bb6d-4601-8003-708d62d5fb7a/logo-tiny.svg"
+          alt="deco news logo"
+          width={24}
+          height={24}
+        />
+        <span class="text-gray-700">deco news</span>
       </a>
     </div>
   );

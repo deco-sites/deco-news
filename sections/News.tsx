@@ -1,6 +1,6 @@
 import type { NewsItem } from "site/types/news.ts";
 import FilterTabs from "site/islands/FilterTabs.tsx";
-import { ImageWidget } from "apps/admin/widgets.ts";
+import Header from "site/components/Header.tsx";
 
 /**
  * Retorna o início da semana (segunda-feira) para uma data
@@ -88,11 +88,6 @@ function groupByWeek(items: NewsItem[]): Map<string, { label: string; items: New
 }
 
 export interface Props {
-  /**
-   * @title Logo
-   * @description Imagem do logo para o navbar
-   */
-  logo?: ImageWidget;
   /**
    * @title Título da seção
    * @default Deco News
@@ -221,6 +216,167 @@ function cleanContent(content: string): string {
 }
 
 /**
+ * Formata números grandes (1000 -> 1K, 1000000 -> 1M)
+ */
+function formatNumber(num?: number): string {
+  if (!num) return "0";
+  if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + "M";
+  if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + "K";
+  return num.toString();
+}
+
+/**
+ * Placeholder para imagem de perfil quando não disponível
+ */
+function ProfileImagePlaceholder() {
+  return (
+    <div class="w-12 h-12 rounded-full bg-[#0A66C2]/10 flex items-center justify-center">
+      <svg class="w-6 h-6 text-[#0A66C2]" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+      </svg>
+    </div>
+  );
+}
+
+/**
+ * Card específico para posts do LinkedIn
+ */
+function LinkedInCard({ item }: { item: NewsItem }) {
+  const cleanContentText = item.content ? cleanContent(item.content) : '';
+  const score = item.postScore ?? 0;
+
+  // Handler para erro de carregamento de imagem de perfil
+  const handleProfileImageError = (e: Event) => {
+    const img = e.target as HTMLImageElement;
+    const parent = img.parentElement;
+    if (parent) {
+      // Esconde a imagem e mostra o placeholder
+      img.style.display = 'none';
+      // Cria o placeholder dinamicamente
+      const placeholder = document.createElement('div');
+      placeholder.className = 'w-12 h-12 rounded-full bg-[#0A66C2]/10 flex items-center justify-center';
+      placeholder.innerHTML = `<svg class="w-6 h-6 text-[#0A66C2]" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>`;
+      parent.insertBefore(placeholder, img);
+    }
+  };
+
+  // Handler para erro de carregamento de mídia
+  const handleMediaImageError = (e: Event) => {
+    const img = e.target as HTMLImageElement;
+    const container = img.parentElement;
+    if (container) {
+      container.innerHTML = `
+        <div class="flex items-center justify-center w-full h-full">
+          <div class="text-center p-6">
+            <svg class="w-12 h-12 text-neutral-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <p class="text-xs text-neutral-400">Content not available</p>
+          </div>
+        </div>
+      `;
+    }
+  };
+
+  return (
+    <div class="news-card-wrapper" data-category="community" data-score={score}>
+      <a
+        href={item.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="group news-card flex flex-col h-full cursor-pointer"
+      >
+        <div class="flex flex-col flex-1 p-6">
+          {/* Header com foto e info do autor */}
+          <div class="flex items-start gap-4 mb-4">
+            {item.authorProfileImage ? (
+              <img
+                src={item.authorProfileImage}
+                alt={item.author || "Author"}
+                class="w-12 h-12 rounded-full object-cover border-2 border-[#0A66C2]/20"
+                loading="lazy"
+                onError={handleProfileImageError}
+              />
+            ) : (
+              <ProfileImagePlaceholder />
+            )}
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <h4 class="font-semibold text-neutral-900 truncate">{item.author || "LinkedIn User"}</h4>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-bold bg-[#0A66C2]/10 text-[#0A66C2] rounded-full">
+                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                  </svg>
+                </span>
+              </div>
+              {item.authorHeadline && (
+                <p class="text-sm text-neutral-500 truncate">{item.authorHeadline}</p>
+              )}
+              {item.createdAt && (
+                <time class="text-xs text-neutral-400">
+                  {new Date(item.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                </time>
+              )}
+            </div>
+          </div>
+
+          {/* Content */}
+          {cleanContentText && (
+            <p class="text-neutral-700 text-sm line-clamp-4 mb-4 flex-1 leading-relaxed">{cleanContentText}</p>
+          )}
+
+          {/* Media */}
+          {item.image && (
+            <div class="aspect-[16/9] overflow-hidden rounded-xl bg-neutral-100 mb-4 -mx-2">
+              <img
+                src={item.image}
+                alt="Post media"
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                loading="lazy"
+                onError={handleMediaImageError}
+              />
+            </div>
+          )}
+
+          {/* Engagement metrics */}
+          <div class="flex items-center justify-between pt-4 border-t border-neutral-100 mt-auto">
+            <div class="flex items-center gap-4 text-sm text-neutral-500">
+              {/* Likes */}
+              <div class="flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-[#0A66C2]" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M19.46 11l-3.91-3.91a7 7 0 01-1.69-2.74l-.49-1.47A2.76 2.76 0 0010.76 1 2.75 2.75 0 008 3.74v1.12a9.19 9.19 0 00.46 2.85L8.89 9H4.12A2.12 2.12 0 002 11.12a2.16 2.16 0 00.92 1.76 2.11 2.11 0 00-.21 3 2.11 2.11 0 00.52 2.83A2.13 2.13 0 003 22a2.14 2.14 0 002.12 2h7.14a7 7 0 003.4-.87l2.8-1.53A5 5 0 0021 17.14V13a2 2 0 00-1.54-2z"/>
+                </svg>
+                <span class="font-medium">{formatNumber(item.numLikes)}</span>
+              </div>
+              {/* Comments */}
+              <div class="flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                </svg>
+                <span>{formatNumber(item.numComments)}</span>
+              </div>
+              {/* Reposts */}
+              <div class="flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+                <span>{formatNumber(item.numReposts)}</span>
+              </div>
+            </div>
+            <div class="inline-flex items-center gap-1 text-[#0A66C2] text-sm font-semibold hover:text-[#004182] transition-colors">
+              View post
+              <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
+  );
+}
+
+/**
  * Card padrão para notícias normais
  */
 function NewsCard({ item }: { item: NewsItem }) {
@@ -228,13 +384,34 @@ function NewsCard({ item }: { item: NewsItem }) {
     return <DecoArticleCard item={item} />;
   }
 
-  console.log(item);
+  // Posts do LinkedIn usam card específico (identificado pelo source)
+  if (item.source === 'LinkedIn') {
+    return <LinkedInCard item={item} />;
+  }
 
   const cleanDescription = item.description ? cleanContent(item.description) : '';
   const cleanContentText = item.content ? cleanContent(item.content) : '';
   const displayText = cleanDescription || cleanContentText;
   const category = item.sourceCategory || 'trendsetters';
   const score = item.postScore ?? 0;
+
+  // Handler para erro de carregamento de imagem
+  const handleImageError = (e: Event) => {
+    const img = e.target as HTMLImageElement;
+    const container = img.parentElement;
+    if (container) {
+      container.innerHTML = `
+        <div class="flex items-center justify-center w-full h-full">
+          <div class="text-center p-6">
+            <svg class="w-12 h-12 text-neutral-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <p class="text-xs text-neutral-400">Content not available</p>
+          </div>
+        </div>
+      `;
+    }
+  };
 
   return (
     <div class="news-card-wrapper" data-category={category} data-score={score}>
@@ -251,6 +428,7 @@ function NewsCard({ item }: { item: NewsItem }) {
             alt={item.title}
             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
+            onError={handleImageError}
           />
         </div>
       )}
@@ -391,19 +569,7 @@ function LoadingState() {
 export function LoadingFallback() {
   return (
     <div class="min-h-screen bg-[#F5F5F0]">
-      {/* Header Skeleton */}
-      <header class="sticky top-0 z-50 bg-[#F5F5F0]/80 backdrop-blur-xl border-b border-neutral-200/50">
-        <div class="container mx-auto max-w-7xl px-6">
-          <div class="flex items-center justify-between h-16">
-            <div class="flex items-center gap-2">
-              <div class="w-8 h-8 bg-lime-500 rounded-lg flex items-center justify-center">
-                <span class="text-white font-bold text-lg">D</span>
-              </div>
-              <span class="font-bold text-neutral-900 text-lg">News</span>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header activePage="news" />
 
       {/* Hero Skeleton */}
       <section class="pt-6 pb-12 md:pt-8 md:pb-16 px-6">
@@ -432,7 +598,6 @@ export function LoadingFallback() {
 }
 
 export default function News({
-  logo,
   title: _title = "Deco News",
   subtitle,
   items = [],
@@ -451,51 +616,7 @@ export default function News({
 
   return (
     <div class="min-h-screen bg-[#F5F5F0]">
-      {/* Header */}
-      <header class="sticky top-0 z-50 bg-[#F5F5F0]/80 backdrop-blur-xl border-b border-neutral-200/50">
-        <div class="container mx-auto max-w-7xl px-6">
-          <div class="flex items-center justify-between h-16">
-            {/* Logo */}
-            <a href="/" class="flex items-center gap-2">
-              {logo ? (
-                <img 
-                  src={logo} 
-                  alt="Logo" 
-                  class="h-8 w-auto object-contain"
-                />
-              ) : (
-                <>
-                  <div class="w-8 h-8 bg-lime-500 rounded-lg flex items-center justify-center">
-                    <span class="text-white font-bold text-lg">D</span>
-                  </div>
-                  <span class="font-bold text-neutral-900 text-lg">News</span>
-                </>
-              )}
-            </a>
-
-            {/* Nav */}
-            <nav class="hidden sm:flex items-center gap-6">
-              <a href="/" class="text-sm font-medium text-lime-600">
-                News
-              </a>
-              <a href="/ai-models" class="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors">
-                AI Models
-              </a>
-            </nav>
-
-            {/* Actions */}
-            <div class="flex items-center gap-3">
-              <a
-                href="https://decocms.com"
-                target="_blank"
-                class="hidden sm:inline-flex items-center px-4 py-2 bg-neutral-900 text-white text-sm font-semibold rounded-xl hover:bg-neutral-800 transition-colors"
-              >
-                decocms
-              </a>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header activePage="news" />
 
       {/* Hero */}
       <section class="pt-6 pb-12 md:pt-8 md:pb-16 px-6">

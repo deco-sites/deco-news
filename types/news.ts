@@ -18,6 +18,9 @@ export interface NewsItem {
   url: string;
   image?: string;
   author?: string;
+  authorHeadline?: string;
+  authorProfileUrl?: string;
+  authorProfileImage?: string;
   publishedAt?: string;
   source?: string;
   createdAt?: string;
@@ -27,6 +30,12 @@ export interface NewsItem {
    * Score de relevância do post (maior = mais relevante)
    */
   postScore?: number;
+  /**
+   * Métricas de engajamento (para posts de redes sociais)
+   */
+  numLikes?: number;
+  numComments?: number;
+  numReposts?: number;
 }
 
 export interface ScrapedContent {

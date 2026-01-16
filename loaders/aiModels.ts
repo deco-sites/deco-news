@@ -72,7 +72,7 @@ function toAIModel(model: AIModelDB): AIModel {
 
 /**
  * @title Loader de AI Models
- * @description Carrega os top AI models do banco de dados
+ * @description Carrega os trending AI models do banco de dados
  */
 async function loader(
   props: Props,

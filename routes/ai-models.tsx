@@ -17,8 +17,7 @@ export default defineRoute(async (req, _ctx) => {
 
   return (
     <AIModels
-      title="Top AI Models"
-      subtitle="Compare the most powerful AI models by performance, pricing, and capabilities."
+      title="Trending AI Models"
       models={models}
       error={error}
     />

@@ -38,7 +38,30 @@ export interface RedditContentDB {
   updated_at?: string;
 }
 
-// Tipo unificado para ambas as fontes
+// Tipo para conteúdo do LinkedIn
+export interface LinkedInContentDB {
+  id: number;
+  post_id: string;
+  url?: string;
+  author_name?: string;
+  author_headline?: string;
+  author_profile_url?: string;
+  author_profile_image?: string;
+  content?: string;
+  num_likes?: number;
+  num_comments?: number;
+  num_reposts?: number;
+  post_type?: string;
+  media_url?: string;
+  published_at?: string;
+  scraped_at?: string;
+  post_score?: number;
+  type?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Tipo unificado para todas as fontes
 export interface UnifiedContent {
   id: number;
   title: string;
@@ -49,12 +72,25 @@ export interface UnifiedContent {
   updated_at?: string;
   type?: string;
   post_score?: number;
+  // Campos extras para LinkedIn
+  author_name?: string;
+  author_headline?: string;
+  author_profile_url?: string;
+  author_profile_image?: string;
+  num_likes?: number;
+  num_comments?: number;
+  num_reposts?: number;
+  media_url?: string;
+  is_linkedin?: boolean;
 }
 
 /**
  * Converte o type do banco para sourceCategory normalizado
  */
-function normalizeSourceCategory(type?: string): 'trendsetters' | 'enterprise' | 'mcp-startups' | 'community' {
+function normalizeSourceCategory(type?: string, isLinkedIn = false): 'trendsetters' | 'enterprise' | 'mcp-startups' | 'community' {
+  // Posts do LinkedIn são categorizados como 'community'
+  if (isLinkedIn) return 'community';
+  
   if (!type) return 'trendsetters';
   
   const normalized = type.toLowerCase().trim();
@@ -71,6 +107,7 @@ function normalizeSourceCategory(type?: string): 'trendsetters' | 'enterprise' |
     case 'mcp-first startups':
       return 'mcp-startups';
     case 'community':
+    case 'linkedin':
       return 'community';
     default:
       // Se não reconhecer, tenta inferir ou usa default
@@ -106,9 +143,9 @@ async function loader(
     const db = getDatabase();
     
     // Se limit for 0, busca TODOS os itens
-    // Se limit > 0, divide entre as fontes
+    // Se limit > 0, divide entre as fontes (blogs, reddit, linkedin)
     const hasLimit = limit > 0;
-    const limitPerSource = hasLimit ? Math.ceil(limit / 2) : 999999;
+    const limitPerSource = hasLimit ? Math.ceil(limit / 3) : 999999;
     
     // Busca blogs - usa source_category do banco ou default 'trendsetters'
     const blogsResult = await db.query<UnifiedContent>(`
@@ -144,6 +181,32 @@ async function loader(
       ${hasLimit ? `LIMIT ${limitPerSource}` : ''}
     `);
 
+    // Busca LinkedIn
+    const linkedinResult = await db.query<UnifiedContent>(`
+      SELECT 
+        id,
+        COALESCE(SUBSTR(content, 1, 100) || '...', author_name || ' on LinkedIn') as title,
+        url,
+        content,
+        'LinkedIn' as source,
+        COALESCE(updated_at, scraped_at) as updated_at,
+        COALESCE(published_at, created_at) as created_at,
+        type,
+        post_score,
+        author_name,
+        author_headline,
+        author_profile_url,
+        author_profile_image,
+        num_likes,
+        num_comments,
+        num_reposts,
+        media_url,
+        1 as is_linkedin
+      FROM linkedin_content_scrape
+      ORDER BY COALESCE(post_score, 0) DESC, COALESCE(published_at, created_at) DESC
+      ${hasLimit ? `LIMIT ${limitPerSource}` : ''}
+    `);
+
     if (!blogsResult.success) {
       console.error("❌ [Loader] Erro ao buscar blogs:", blogsResult.error?.message);
     }
@@ -152,10 +215,15 @@ async function loader(
       console.error("❌ [Loader] Erro ao buscar Reddit:", redditResult.error?.message);
     }
 
+    if (!linkedinResult.success) {
+      console.error("❌ [Loader] Erro ao buscar LinkedIn:", linkedinResult.error?.message);
+    }
+
     // Combina os resultados
     const allItems = [
       ...(blogsResult.data ?? []),
       ...(redditResult.data ?? []),
+      ...(linkedinResult.data ?? []),
     ];
 
     // Ordena todos por post_score (maior primeiro), depois por data como desempate
@@ -177,7 +245,7 @@ async function loader(
     // Aplica o limite final (se houver)
     const limitedItems = hasLimit ? allItems.slice(0, limit) : allItems;
     
-    console.log(`📊 [Loader] Blogs: ${blogsResult.data?.length || 0}, Reddit: ${redditResult.data?.length || 0}`);
+    console.log(`📊 [Loader] Blogs: ${blogsResult.data?.length || 0}, Reddit: ${redditResult.data?.length || 0}, LinkedIn: ${linkedinResult.data?.length || 0}`);
     console.log(`📦 [Loader] Total após mesclar e limitar: ${limitedItems.length}`);
 
     // Converte UnifiedContent para NewsItem
@@ -188,11 +256,20 @@ async function loader(
       source: item.source,
       publishedAt: item.updated_at,
       createdAt: item.created_at,
-      sourceCategory: normalizeSourceCategory(item.type),
+      sourceCategory: normalizeSourceCategory(item.type, !!item.is_linkedin),
       postScore: item.post_score,
+      // Campos extras para LinkedIn
+      author: item.author_name,
+      authorHeadline: item.author_headline,
+      authorProfileUrl: item.author_profile_url,
+      authorProfileImage: item.author_profile_image,
+      numLikes: item.num_likes,
+      numComments: item.num_comments,
+      numReposts: item.num_reposts,
+      image: item.media_url,
     }));
 
-    console.log(`✅ [Loader] ${items.length} itens carregados (blogs + Reddit)`);
+    console.log(`✅ [Loader] ${items.length} itens carregados (blogs + Reddit + LinkedIn)`);
     return items;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
