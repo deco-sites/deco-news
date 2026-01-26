@@ -3,6 +3,52 @@ import FilterTabs from "site/islands/FilterTabs.tsx";
 import Header from "site/components/Header.tsx";
 
 /**
+ * Parseia uma string de data de forma robusta
+ * Suporta formatos do SQLite como "2025-01-20 15:30:00" e ISO strings
+ */
+function parseDate(dateStr: string | undefined | null): Date | null {
+  // Ignora valores vazios ou inválidos
+  if (!dateStr || dateStr === '0' || dateStr === '' || dateStr === 'null') return null;
+  
+  // Tenta parsear diretamente primeiro
+  let date = new Date(dateStr);
+  
+  // Se falhou, tenta normalizar o formato
+  if (isNaN(date.getTime())) {
+    // Formato SQLite: "2025-01-20 15:30:00" -> "2025-01-20T15:30:00"
+    const normalized = dateStr.replace(' ', 'T');
+    date = new Date(normalized);
+  }
+  
+  // Se ainda falhou, tenta extrair apenas a data (YYYY-MM-DD)
+  if (isNaN(date.getTime())) {
+    const dateMatch = dateStr.match(/(\d{4})-(\d{2})-(\d{2})/);
+    if (dateMatch) {
+      date = new Date(parseInt(dateMatch[1]), parseInt(dateMatch[2]) - 1, parseInt(dateMatch[3]));
+    }
+  }
+  
+  // Se ainda falhou, tenta timestamp Unix
+  if (isNaN(date.getTime())) {
+    const timestamp = parseInt(dateStr);
+    if (!isNaN(timestamp)) {
+      // Se for timestamp em segundos (Unix), converte para ms
+      // Mas ignora timestamps muito pequenos (resultariam em 1970)
+      if (timestamp > 1000000000) { // Depois de 2001
+        date = new Date(timestamp < 1e12 ? timestamp * 1000 : timestamp);
+      }
+    }
+  }
+  
+  // Valida: rejeita datas antes de 2000 (provavelmente são epoch errors)
+  if (!isNaN(date.getTime()) && date.getFullYear() < 2000) {
+    return null;
+  }
+  
+  return isNaN(date.getTime()) ? null : date;
+}
+
+/**
  * Retorna o início da semana (segunda-feira) para uma data
  */
 function getWeekStart(date: Date): Date {
@@ -41,37 +87,44 @@ function formatWeekRange(weekStart: Date): string {
 function groupByWeek(items: NewsItem[]): Map<string, { label: string; items: NewsItem[] }> {
   const groups = new Map<string, { label: string; items: NewsItem[] }>();
 
+  // Ordena por postScore primeiro (maior = mais relevante), depois por data
   const sortedItems = [...items].sort((a, b) => {
-    const dateA = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
-    const dateB = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
-    return dateB - dateA;
+    const scoreA = a.postScore ?? 0;
+    const scoreB = b.postScore ?? 0;
+    
+    // Primeiro compara por score (maior primeiro)
+    if (scoreB !== scoreA) {
+      return scoreB - scoreA;
+    }
+    
+    // Se scores iguais, desempata por data (mais recente primeiro)
+    const dateA = parseDate(a.publishedAt) ?? parseDate(a.createdAt);
+    const dateB = parseDate(b.publishedAt) ?? parseDate(b.createdAt);
+    return (dateB?.getTime() ?? 0) - (dateA?.getTime() ?? 0);
   });
 
   for (const item of sortedItems) {
     let weekKey: string;
     let weekLabel: string;
 
-    if (item.publishedAt) {
-      const date = new Date(item.publishedAt);
-      if (!isNaN(date.getTime())) {
-        const weekStart = getWeekStart(date);
-        weekKey = weekStart.toISOString().split("T")[0];
+    // Tenta publishedAt primeiro, depois createdAt como fallback
+    const date = parseDate(item.publishedAt) ?? parseDate(item.createdAt);
+    
+    if (date) {
+      const weekStart = getWeekStart(date);
+      weekKey = weekStart.toISOString().split("T")[0];
 
-        const now = new Date();
-        const thisWeekStart = getWeekStart(now);
-        const lastWeekStart = new Date(thisWeekStart);
-        lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+      const now = new Date();
+      const thisWeekStart = getWeekStart(now);
+      const lastWeekStart = new Date(thisWeekStart);
+      lastWeekStart.setDate(lastWeekStart.getDate() - 7);
 
-        if (weekStart.getTime() === thisWeekStart.getTime()) {
-          weekLabel = "This week";
-        } else if (weekStart.getTime() === lastWeekStart.getTime()) {
-          weekLabel = "Last week";
-        } else {
-          weekLabel = formatWeekRange(weekStart);
-        }
+      if (weekStart.getTime() === thisWeekStart.getTime()) {
+        weekLabel = "This week";
+      } else if (weekStart.getTime() === lastWeekStart.getTime()) {
+        weekLabel = "Last week";
       } else {
-        weekKey = "no-date";
-        weekLabel = "No date";
+        weekLabel = formatWeekRange(weekStart);
       }
     } else {
       weekKey = "no-date";
@@ -377,9 +430,84 @@ function LinkedInCard({ item }: { item: NewsItem }) {
 }
 
 /**
+ * Card especial para Weekly Reports da Deco
+ */
+function WeeklyReportCard({ item }: { item: NewsItem }) {
+  // Usa createdAt para exibir a data real de publicação (publishedAt tem -7 dias para agrupamento)
+  const displayDate = item.createdAt || item.publishedAt;
+
+  return (
+    <div class="news-card-wrapper" data-category="weekly-report" data-score={item.postScore ?? 1000}>
+      <a
+        href={item.slug ? `/weekly/${item.slug}` : item.url}
+        class="group news-card flex flex-col h-full cursor-pointer bg-gradient-to-br from-lime-50/80 to-emerald-50/80 border-lime-200/60 hover:border-lime-400"
+      >
+        <div class="flex flex-col flex-1 p-6">
+          {/* Header */}
+          <div class="flex items-center gap-2 mb-4">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold bg-lime-500 text-white rounded-full">
+              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
+              </svg>
+              Weekly
+            </span>
+            {item.readingTime && (
+              <span class="px-2 py-0.5 text-xs font-medium bg-white/80 text-neutral-500 rounded-full">
+                {item.readingTime} min
+              </span>
+            )}
+          </div>
+
+          {/* Title */}
+          <h3 class="text-xl font-bold text-neutral-900 leading-snug group-hover:text-lime-600 transition-colors line-clamp-2 mb-3">
+            {item.title}
+          </h3>
+
+          {/* Summary */}
+          {item.summary && (
+            <p class="text-neutral-500 text-sm line-clamp-3 mb-4 flex-1">
+              {item.summary}
+            </p>
+          )}
+
+          {/* Footer */}
+          <div class="flex items-center justify-between pt-4 border-t border-lime-200/50 mt-auto">
+            <div class="flex items-center gap-2 text-xs text-neutral-400">
+              <span class="font-medium text-lime-600">Deco Weekly</span>
+              {displayDate && (
+                <>
+                  <span>•</span>
+                  <time>
+                    {new Date(displayDate).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </time>
+                </>
+              )}
+            </div>
+            <span class="inline-flex items-center gap-1 text-lime-600 text-sm font-semibold hover:text-lime-700 transition-colors">
+              Read
+              <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+              </svg>
+            </span>
+          </div>
+        </div>
+      </a>
+    </div>
+  );
+}
+
+/**
  * Card padrão para notícias normais
  */
 function NewsCard({ item }: { item: NewsItem }) {
+  // Weekly Reports usam card especial destacado
+  if (item.isWeeklyReport || item.sourceCategory === 'weekly-report') {
+    return <WeeklyReportCard item={item} />;
+  }
+
   if (item.author === "Deco") {
     return <DecoArticleCard item={item} />;
   }
@@ -608,6 +736,7 @@ export default function News({
   // Contadores para passar para a island de filtro
   const counts = {
     all: items.length,
+    "weekly-report": items.filter(i => i.sourceCategory === 'weekly-report').length,
     trendsetters: items.filter(i => i.sourceCategory === 'trendsetters').length,
     enterprise: items.filter(i => i.sourceCategory === 'enterprise').length,
     "mcp-startups": items.filter(i => i.sourceCategory === 'mcp-startups').length,
@@ -688,6 +817,9 @@ export default function News({
             }
             
             /* Quando filtro específico é aplicado, esconde todos e mostra só os que batem */
+            #news-grid-container.filter-weekly-report .news-card-wrapper:not([data-category="weekly-report"]) {
+              display: none;
+            }
             #news-grid-container.filter-trendsetters .news-card-wrapper:not([data-category="trendsetters"]) {
               display: none;
             }

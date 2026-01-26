@@ -8,8 +8,9 @@
  * - enterprise: Fontes focadas em empresas e análises de mercado (Gartner, Forrester, IDC)
  * - mcp-startups: Startups focadas em MCP (obot, glama, lunar.dev, etc)
  * - community: Canais de comunidade e discussão (Reddit, Twitter, LinkedIn)
+ * - weekly-report: Relatório semanal da Deco
  */
-export type SourceCategory = 'trendsetters' | 'enterprise' | 'mcp-startups' | 'community';
+export type SourceCategory = 'trendsetters' | 'enterprise' | 'mcp-startups' | 'community' | 'weekly-report';
 
 export interface NewsItem {
   title: string;
@@ -36,6 +37,15 @@ export interface NewsItem {
   numLikes?: number;
   numComments?: number;
   numReposts?: number;
+  /**
+   * Campos específicos para Weekly Reports
+   */
+  slug?: string;
+  summary?: string;
+  keyPoints?: string[];
+  tags?: string[];
+  readingTime?: number;
+  isWeeklyReport?: boolean;
 }
 
 export interface ScrapedContent {

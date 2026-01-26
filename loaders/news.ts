@@ -70,6 +70,7 @@ export interface UnifiedContent {
   source?: string;
   created_at?: string;
   updated_at?: string;
+  week_date?: string;
   type?: string;
   post_score?: number;
   // Campos extras para LinkedIn
@@ -82,12 +83,24 @@ export interface UnifiedContent {
   num_reposts?: number;
   media_url?: string;
   is_linkedin?: boolean;
+  // Campos extras para Weekly Report
+  is_weekly_report?: boolean;
+  slug?: string;
+  summary?: string;
+  key_points?: string;
+  tags?: string;
+  reading_time?: number;
+  featured_image?: string;
+  published_at?: string;
 }
 
 /**
  * Converte o type do banco para sourceCategory normalizado
  */
-function normalizeSourceCategory(type?: string, isLinkedIn = false): 'trendsetters' | 'enterprise' | 'mcp-startups' | 'community' {
+function normalizeSourceCategory(type?: string, isLinkedIn = false, isWeeklyReport = false): 'trendsetters' | 'enterprise' | 'mcp-startups' | 'community' | 'weekly-report' {
+  // Weekly Reports têm categoria própria
+  if (isWeeklyReport) return 'weekly-report';
+  
   // Posts do LinkedIn são categorizados como 'community'
   if (isLinkedIn) return 'community';
   
@@ -113,6 +126,22 @@ function normalizeSourceCategory(type?: string, isLinkedIn = false): 'trendsette
       // Se não reconhecer, tenta inferir ou usa default
       console.log(`⚠️ [Loader] Tipo desconhecido: "${type}", usando trendsetters como default`);
       return 'trendsetters';
+  }
+}
+
+/**
+ * Parseia JSON de forma segura, retornando um valor padrão em caso de erro
+ */
+function safeJsonParse<T>(value: string | undefined | null, defaultValue: T): T {
+  if (!value) return defaultValue;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    // Se não for JSON válido, tenta dividir por vírgula (caso seja lista simples)
+    if (typeof defaultValue === "object" && Array.isArray(defaultValue)) {
+      return value.split(",").map((s) => s.trim()).filter(Boolean) as T;
+    }
+    return defaultValue;
   }
 }
 
@@ -147,7 +176,7 @@ async function loader(
     const hasLimit = limit > 0;
     const limitPerSource = hasLimit ? Math.ceil(limit / 3) : 999999;
     
-    // Busca blogs - usa source_category do banco ou default 'trendsetters'
+    // Busca blogs - usa week_date para agrupar por semana, fallback para created_at
     const blogsResult = await db.query<UnifiedContent>(`
       SELECT 
         id,
@@ -157,14 +186,15 @@ async function loader(
         source_title as source,
         updated_at,
         created_at,
+        COALESCE(week_date, created_at) as week_date,
         type,
         post_score
       FROM contents
-      ORDER BY COALESCE(post_score, 0) DESC, updated_at DESC
+      ORDER BY COALESCE(post_score, 0) DESC, COALESCE(week_date, created_at) DESC
       ${hasLimit ? `LIMIT ${limitPerSource}` : ''}
     `);
 
-    // Busca Reddit - usa source_category do banco ou default 'community'
+    // Busca Reddit - usa week_date para agrupar por semana, fallback para created_at
     const redditResult = await db.query<UnifiedContent>(`
       SELECT 
         id,
@@ -174,14 +204,15 @@ async function loader(
         COALESCE('r/' || subreddit, 'Reddit') as source,
         COALESCE(updated_at, scraped_at) as updated_at,
         datetime(created_at, 'unixepoch') as created_at,
+        COALESCE(week_date, datetime(created_at, 'unixepoch')) as week_date,
         type,
         post_score
       FROM reddit_content_scrape
-      ORDER BY COALESCE(post_score, 0) DESC, COALESCE(created_at, scraped_at) DESC
+      ORDER BY COALESCE(post_score, 0) DESC, COALESCE(week_date, created_at) DESC
       ${hasLimit ? `LIMIT ${limitPerSource}` : ''}
     `);
 
-    // Busca LinkedIn
+    // Busca LinkedIn - usa week_date para agrupar por semana, fallback para published_at
     const linkedinResult = await db.query<UnifiedContent>(`
       SELECT 
         id,
@@ -191,6 +222,7 @@ async function loader(
         'LinkedIn' as source,
         COALESCE(updated_at, scraped_at) as updated_at,
         COALESCE(published_at, created_at) as created_at,
+        COALESCE(week_date, published_at) as week_date,
         type,
         post_score,
         author_name,
@@ -203,8 +235,35 @@ async function loader(
         media_url,
         1 as is_linkedin
       FROM linkedin_content_scrape
-      ORDER BY COALESCE(post_score, 0) DESC, COALESCE(published_at, created_at) DESC
+      ORDER BY COALESCE(post_score, 0) DESC, COALESCE(week_date, published_at) DESC
       ${hasLimit ? `LIMIT ${limitPerSource}` : ''}
+    `);
+
+    // Busca Weekly Reports - usa published_at MENOS 7 dias como week_date
+    // Isso porque o Weekly é publicado na semana atual mas refere-se aos acontecimentos da semana passada
+    const weeklyResult = await db.query<UnifiedContent>(`
+      SELECT 
+        id,
+        title,
+        COALESCE(url, '/weekly/' || slug) as url,
+        content,
+        'Deco Weekly' as source,
+        created_at as updated_at,
+        COALESCE(published_at, created_at) as created_at,
+        date(COALESCE(published_at, created_at), '-7 days') as week_date,
+        'weekly-report' as type,
+        1000 as post_score,
+        author as author_name,
+        slug,
+        summary,
+        key_points,
+        tags,
+        reading_time,
+        featured_image as media_url,
+        published_at,
+        1 as is_weekly_report
+      FROM deco_weekly_report
+      ORDER BY COALESCE(published_at, created_at) DESC
     `);
 
     if (!blogsResult.success) {
@@ -219,14 +278,19 @@ async function loader(
       console.error("❌ [Loader] Erro ao buscar LinkedIn:", linkedinResult.error?.message);
     }
 
+    if (!weeklyResult.success) {
+      console.error("❌ [Loader] Erro ao buscar Weekly Reports:", weeklyResult.error?.message);
+    }
+
     // Combina os resultados
     const allItems = [
       ...(blogsResult.data ?? []),
       ...(redditResult.data ?? []),
       ...(linkedinResult.data ?? []),
+      ...(weeklyResult.data ?? []),
     ];
 
-    // Ordena todos por post_score (maior primeiro), depois por data como desempate
+    // Ordena todos por post_score (maior primeiro), depois por week_date como desempate
     allItems.sort((a, b) => {
       const scoreA = a.post_score ?? 0;
       const scoreB = b.post_score ?? 0;
@@ -236,27 +300,28 @@ async function loader(
         return scoreB - scoreA;
       }
       
-      // Se scores iguais, desempata por data (mais recente primeiro)
-      const dateA = a.updated_at ? new Date(a.updated_at).getTime() : 0;
-      const dateB = b.updated_at ? new Date(b.updated_at).getTime() : 0;
+      // Se scores iguais, desempata por week_date (mais recente primeiro)
+      const dateA = a.week_date ? new Date(a.week_date).getTime() : 0;
+      const dateB = b.week_date ? new Date(b.week_date).getTime() : 0;
       return dateB - dateA;
     });
 
     // Aplica o limite final (se houver)
     const limitedItems = hasLimit ? allItems.slice(0, limit) : allItems;
     
-    console.log(`📊 [Loader] Blogs: ${blogsResult.data?.length || 0}, Reddit: ${redditResult.data?.length || 0}, LinkedIn: ${linkedinResult.data?.length || 0}`);
+    console.log(`📊 [Loader] Blogs: ${blogsResult.data?.length || 0}, Reddit: ${redditResult.data?.length || 0}, LinkedIn: ${linkedinResult.data?.length || 0}, Weekly: ${weeklyResult.data?.length || 0}`);
     console.log(`📦 [Loader] Total após mesclar e limitar: ${limitedItems.length}`);
 
     // Converte UnifiedContent para NewsItem
+    // publishedAt usa week_date para agrupamento semanal correto
     const items = limitedItems.map((item): NewsItem => ({
       title: item.title,
       url: item.url,
       content: item.content,
       source: item.source,
-      publishedAt: item.updated_at,
+      publishedAt: item.week_date || item.updated_at,
       createdAt: item.created_at,
-      sourceCategory: normalizeSourceCategory(item.type, !!item.is_linkedin),
+      sourceCategory: normalizeSourceCategory(item.type, !!item.is_linkedin, !!item.is_weekly_report),
       postScore: item.post_score,
       // Campos extras para LinkedIn
       author: item.author_name,
@@ -267,6 +332,13 @@ async function loader(
       numComments: item.num_comments,
       numReposts: item.num_reposts,
       image: item.media_url,
+      // Campos extras para Weekly Report
+      isWeeklyReport: !!item.is_weekly_report,
+      slug: item.slug,
+      summary: item.summary,
+      keyPoints: safeJsonParse<string[]>(item.key_points, []),
+      tags: safeJsonParse<string[]>(item.tags, []),
+      readingTime: item.reading_time,
     }));
 
     console.log(`✅ [Loader] ${items.length} itens carregados (blogs + Reddit + LinkedIn)`);

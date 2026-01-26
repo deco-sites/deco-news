@@ -6,6 +6,7 @@ import * as $$$$$$$$$$$0 from "./apps/deco/htmx.ts";
 import * as $$$$$$$$$$$1 from "./apps/site.ts";
 import * as $$$0 from "./loaders/aiModels.ts";
 import * as $$$1 from "./loaders/news.ts";
+import * as $$$2 from "./loaders/weeklyArticle.ts";
 import * as $$$$$$0 from "./sections/AIModels.tsx";
 import * as $$$$$$1 from "./sections/Footer.tsx";
 import * as $$$$$$2 from "./sections/ItWorks.tsx";
@@ -16,6 +17,7 @@ const manifest = {
   "loaders": {
     "site/loaders/aiModels.ts": $$$0,
     "site/loaders/news.ts": $$$1,
+    "site/loaders/weeklyArticle.ts": $$$2,
   },
   "sections": {
     "site/sections/AIModels.tsx": $$$$$$0,
