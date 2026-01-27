@@ -90,7 +90,7 @@ export interface UnifiedContent {
   key_points?: string;
   tags?: string;
   reading_time?: number;
-  featured_image?: string;
+  image_url?: string;
   published_at?: string;
 }
 
@@ -259,7 +259,7 @@ async function loader(
         key_points,
         tags,
         reading_time,
-        featured_image as media_url,
+        image_url as media_url,
         published_at,
         1 as is_weekly_report
       FROM deco_weekly_report

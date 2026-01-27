@@ -18,12 +18,14 @@ export interface NewsItem {
   content?: string;
   url: string;
   image?: string;
+  imageAltText?: string;
   author?: string;
   authorHeadline?: string;
   authorProfileUrl?: string;
   authorProfileImage?: string;
   publishedAt?: string;
   source?: string;
+  sourceTitle?: string;
   createdAt?: string;
   category?: string;
   sourceCategory?: SourceCategory;
@@ -44,8 +46,14 @@ export interface NewsItem {
   summary?: string;
   keyPoints?: string[];
   tags?: string[];
+  keywords?: string[];
   readingTime?: number;
   isWeeklyReport?: boolean;
+  /**
+   * Campos de SEO
+   */
+  metaTitle?: string;
+  metaDescription?: string;
 }
 
 export interface ScrapedContent {

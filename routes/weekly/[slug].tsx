@@ -1,4 +1,5 @@
 import { defineRoute } from "$fresh/server.ts";
+import { Head } from "$fresh/runtime.ts";
 import Header from "../../components/Header.tsx";
 import weeklyArticleLoader from "../../loaders/weeklyArticle.ts";
 import type { NewsItem } from "../../types/news.ts";
@@ -87,8 +88,37 @@ export default defineRoute(async (req, ctx) => {
       })
     : null;
 
+  // SEO: usar meta_title se disponível, senão usar título
+  const seoTitle = article.metaTitle || article.title;
+  const seoDescription = article.metaDescription || article.summary || "";
+  const seoKeywords = article.keywords?.join(", ") || article.tags?.join(", ") || "";
+  const canonicalUrl = `https://news.deco.cx/weekly/${article.slug}`;
+
   return (
     <div class="min-h-screen bg-[#F5F5F0]">
+      {/* SEO Meta Tags */}
+      <Head>
+        <title>{seoTitle} | Deco Weekly</title>
+        <meta name="description" content={seoDescription} />
+        {seoKeywords && <meta name="keywords" content={seoKeywords} />}
+        <link rel="canonical" href={canonicalUrl} />
+        
+        {/* Open Graph */}
+        <meta property="og:title" content={seoTitle} />
+        <meta property="og:description" content={seoDescription} />
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content={canonicalUrl} />
+        {article.image && <meta property="og:image" content={article.image} />}
+        {article.publishedAt && <meta property="article:published_time" content={article.publishedAt} />}
+        {article.author && <meta property="article:author" content={article.author} />}
+        
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={seoTitle} />
+        <meta name="twitter:description" content={seoDescription} />
+        {article.image && <meta name="twitter:image" content={article.image} />}
+      </Head>
+
       <Header activePage="news" />
       
       {/* Hero Section */}
@@ -118,6 +148,11 @@ export default defineRoute(async (req, ctx) => {
                 </svg>
                 Deco Weekly
               </span>
+              {article.category && (
+                <span class="px-2.5 py-1 text-xs font-medium bg-neutral-100 text-neutral-600 rounded-full">
+                  {article.category}
+                </span>
+              )}
               {article.readingTime && (
                 <span class="text-xs text-neutral-500">
                   {article.readingTime} min read
@@ -150,6 +185,27 @@ export default defineRoute(async (req, ctx) => {
             )}
           </div>
         </header>
+
+        {/* Banner Image */}
+        {article.image && (
+          <section class="relative py-4 px-6">
+            <div class="container mx-auto max-w-4xl">
+              <figure class="relative overflow-hidden rounded-2xl bg-neutral-100">
+                <img 
+                  src={article.image} 
+                  alt={article.imageAltText || article.title}
+                  class="w-full h-auto max-h-[500px] object-cover"
+                  loading="eager"
+                />
+                {article.imageAltText && (
+                  <figcaption class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-6 py-4">
+                    <p class="text-white/90 text-sm">{article.imageAltText}</p>
+                  </figcaption>
+                )}
+              </figure>
+            </div>
+          </section>
+        )}
 
         {/* Key Points - Dropdown */}
         {article.keyPoints && article.keyPoints.length > 0 && (

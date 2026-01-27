@@ -82,7 +82,7 @@ function formatWeekRange(weekStart: Date): string {
 }
 
 /**
- * Agrupa notícias por semana
+ * Agrupa notícias por semana e retorna ordenado da mais recente para a mais antiga
  */
 function groupByWeek(items: NewsItem[]): Map<string, { label: string; items: NewsItem[] }> {
   const groups = new Map<string, { label: string; items: NewsItem[] }>();
@@ -137,7 +137,19 @@ function groupByWeek(items: NewsItem[]): Map<string, { label: string; items: New
     groups.get(weekKey)!.items.push(item);
   }
 
-  return groups;
+  // Ordena os grupos por weekKey (mais recente primeiro)
+  // weekKey é no formato YYYY-MM-DD, então ordem alfabética inversa = mais recente primeiro
+  const sortedGroups = new Map(
+    Array.from(groups.entries()).sort((a, b) => {
+      // "no-date" sempre vai para o final
+      if (a[0] === "no-date") return 1;
+      if (b[0] === "no-date") return -1;
+      // Ordem decrescente (mais recente primeiro)
+      return b[0].localeCompare(a[0]);
+    })
+  );
+
+  return sortedGroups;
 }
 
 export interface Props {

@@ -20,12 +20,19 @@ export interface WeeklyReportDB {
   summary?: string;
   key_points?: string;
   tags?: string;
+  keywords?: string;
   author?: string;
   reading_time?: number;
-  featured_image?: string;
+  image_url?: string;
+  image_alt_text?: string;
   published_at?: string;
   created_at?: string;
   url?: string;
+  source_title?: string;
+  category?: string;
+  meta_title?: string;
+  meta_description?: string;
+  status?: string;
 }
 
 /**
@@ -74,12 +81,19 @@ async function loader(
         summary,
         key_points,
         tags,
+        keywords,
         author,
         reading_time,
-        featured_image,
+        image_url,
+        image_alt_text,
         published_at,
         created_at,
-        url
+        url,
+        source_title,
+        category,
+        meta_title,
+        meta_description,
+        status
       FROM deco_weekly_report
       WHERE slug = '${safeSlug}'
       LIMIT 1
@@ -104,15 +118,21 @@ async function loader(
       summary: article.summary,
       keyPoints: safeJsonParse<string[]>(article.key_points, []),
       tags: safeJsonParse<string[]>(article.tags, []),
+      keywords: safeJsonParse<string[]>(article.keywords, []),
       author: article.author,
       readingTime: article.reading_time,
-      image: article.featured_image,
+      image: article.image_url,
+      imageAltText: article.image_alt_text,
       publishedAt: article.published_at,
       createdAt: article.created_at,
       slug: article.slug,
       isWeeklyReport: true,
       sourceCategory: 'weekly-report',
       source: 'Deco Weekly',
+      sourceTitle: article.source_title,
+      category: article.category,
+      metaTitle: article.meta_title,
+      metaDescription: article.meta_description,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
