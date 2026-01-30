@@ -9,8 +9,9 @@
  * - mcp-startups: Startups focadas em MCP (obot, glama, lunar.dev, etc)
  * - community: Canais de comunidade e discussão (Reddit, Twitter, LinkedIn)
  * - weekly-report: Relatório semanal da Deco
+ * - blog: Artigos de blogs
  */
-export type SourceCategory = 'trendsetters' | 'enterprise' | 'mcp-startups' | 'community' | 'weekly-report';
+export type SourceCategory = 'trendsetters' | 'enterprise' | 'mcp-startups' | 'community' | 'weekly-report' | 'blog';
 
 export interface NewsItem {
   title: string;

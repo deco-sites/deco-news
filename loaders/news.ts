@@ -1,5 +1,5 @@
 import { getDatabase } from "site/mcp/mod.ts";
-import type { NewsItem } from "site/types/news.ts";
+import type { NewsItem, SourceCategory } from "site/types/news.ts";
 
 export interface Props {
   /**
@@ -96,36 +96,50 @@ export interface UnifiedContent {
 
 /**
  * Converte o type do banco para sourceCategory normalizado
+ * Usa o type real do banco de dados sem inventar categorias
+ * 
+ * Tipos das tabelas sources:
+ * - blog_sources: Enterprise, MCP-First Startups, Trendsetter, Community
+ * - reddit_sources: MCP-First Startups, Enterprise, Trendsetter, Community
+ * - linkedin_sources: MCP-First Startups, Enterprise, Trendsetter, Community
  */
-function normalizeSourceCategory(type?: string, isLinkedIn = false, isWeeklyReport = false): 'trendsetters' | 'enterprise' | 'mcp-startups' | 'community' | 'weekly-report' {
+function normalizeSourceCategory(type?: string | null, isWeeklyReport = false): SourceCategory | undefined {
   // Weekly Reports têm categoria própria
   if (isWeeklyReport) return 'weekly-report';
   
-  // Posts do LinkedIn são categorizados como 'community'
-  if (isLinkedIn) return 'community';
-  
-  if (!type) return 'trendsetters';
+  // Se não tem type, retorna undefined (não inventa categoria)
+  if (!type) return undefined;
   
   const normalized = type.toLowerCase().trim();
   
   // Mapeia os valores do banco para os valores esperados
   switch (normalized) {
+    // Trendsetters (singular e plural)
+    case 'trendsetter':
     case 'trendsetters':
       return 'trendsetters';
+    // Enterprise
     case 'enterprise':
       return 'enterprise';
+    // MCP Startups (várias variações)
     case 'mcp-startups':
     case 'mcp startups':
     case 'mcpstartups':
     case 'mcp-first startups':
       return 'mcp-startups';
+    // Community
     case 'community':
-    case 'linkedin':
       return 'community';
+    // Blog
+    case 'blog':
+      return 'blog';
+    // Weekly Report
+    case 'weekly-report':
+      return 'weekly-report';
     default:
-      // Se não reconhecer, tenta inferir ou usa default
-      console.log(`⚠️ [Loader] Tipo desconhecido: "${type}", usando trendsetters como default`);
-      return 'trendsetters';
+      // Se não reconhecer, loga para debug e retorna undefined
+      console.log(`⚠️ [Loader] Tipo não mapeado: "${type}"`);
+      return undefined;
   }
 }
 
@@ -171,72 +185,73 @@ async function loader(
   try {
     const db = getDatabase();
     
-    // Se limit for 0, busca TODOS os itens
-    // Se limit > 0, divide entre as fontes (blogs, reddit, linkedin)
+    // Se limit for 0, busca TODOS os itens (sem limite)
     const hasLimit = limit > 0;
-    const limitPerSource = hasLimit ? Math.ceil(limit / 3) : 999999;
     
-    // Busca blogs - usa week_date para agrupar por semana, fallback para created_at
+    // Busca blogs com JOIN na tabela blog_sources para pegar o type
+    // O JOIN é feito verificando se o domínio do article_url contém o domínio do source
     const blogsResult = await db.query<UnifiedContent>(`
       SELECT 
-        id,
-        article_title as title,
-        article_url as url,
-        summary as content,
-        source_title as source,
-        updated_at,
-        created_at,
-        COALESCE(week_date, created_at) as week_date,
-        type,
-        post_score
-      FROM contents
-      ORDER BY COALESCE(post_score, 0) DESC, COALESCE(week_date, created_at) DESC
-      ${hasLimit ? `LIMIT ${limitPerSource}` : ''}
+        c.id,
+        c.article_title as title,
+        c.article_url as url,
+        c.summary as content,
+        COALESCE(bs.name, 'Blog') as source,
+        c.updated_at,
+        COALESCE(c.published_at, c.created_at) as created_at,
+        COALESCE(c.week_date, c.publication_week, c.published_at, c.created_at) as week_date,
+        COALESCE(bs.type, 'blog') as type,
+        COALESCE(c.post_score, bs.authority) as post_score,
+        c.published_at
+      FROM contents c
+      LEFT JOIN blog_sources bs ON 
+        INSTR(c.article_url, REPLACE(REPLACE(bs.url, 'https://', ''), 'http://', '')) > 0
+      ORDER BY COALESCE(c.post_score, bs.authority, 0) DESC, COALESCE(c.week_date, c.published_at, c.created_at) DESC
     `);
 
-    // Busca Reddit - usa week_date para agrupar por semana, fallback para created_at
+    // Busca Reddit com JOIN na tabela reddit_sources para pegar o type
     const redditResult = await db.query<UnifiedContent>(`
       SELECT 
-        id,
-        title,
-        url,
-        selftext as content,
-        COALESCE('r/' || subreddit, 'Reddit') as source,
-        COALESCE(updated_at, scraped_at) as updated_at,
-        datetime(created_at, 'unixepoch') as created_at,
-        COALESCE(week_date, datetime(created_at, 'unixepoch')) as week_date,
-        type,
-        post_score
-      FROM reddit_content_scrape
-      ORDER BY COALESCE(post_score, 0) DESC, COALESCE(week_date, created_at) DESC
-      ${hasLimit ? `LIMIT ${limitPerSource}` : ''}
+        r.id,
+        r.title,
+        r.url,
+        r.selftext as content,
+        COALESCE(rs.name, 'r/' || r.subreddit, 'Reddit') as source,
+        COALESCE(r.updated_at, r.scraped_at) as updated_at,
+        datetime(r.created_at, 'unixepoch') as created_at,
+        COALESCE(r.week_date, datetime(r.created_at, 'unixepoch')) as week_date,
+        COALESCE(rs.type, r.type) as type,
+        COALESCE(r.post_score, rs.authority) as post_score
+      FROM reddit_content_scrape r
+      LEFT JOIN reddit_sources rs ON r.subreddit = rs.subreddit
+      ORDER BY COALESCE(r.post_score, rs.authority, 0) DESC, COALESCE(r.week_date, r.created_at) DESC
     `);
 
-    // Busca LinkedIn - usa week_date para agrupar por semana, fallback para published_at
+    // Busca LinkedIn com JOIN na tabela linkedin_sources para pegar o type
     const linkedinResult = await db.query<UnifiedContent>(`
       SELECT 
-        id,
-        COALESCE(SUBSTR(content, 1, 100) || '...', author_name || ' on LinkedIn') as title,
-        url,
-        content,
-        'LinkedIn' as source,
-        COALESCE(updated_at, scraped_at) as updated_at,
-        COALESCE(published_at, created_at) as created_at,
-        COALESCE(week_date, published_at) as week_date,
-        type,
-        post_score,
-        author_name,
-        author_headline,
-        author_profile_url,
-        author_profile_image,
-        num_likes,
-        num_comments,
-        num_reposts,
-        media_url,
+        l.id,
+        COALESCE(SUBSTR(l.content, 1, 100) || '...', l.author_name || ' on LinkedIn') as title,
+        l.url,
+        l.content,
+        COALESCE(ls.name, 'LinkedIn') as source,
+        COALESCE(l.updated_at, l.scraped_at) as updated_at,
+        COALESCE(l.published_at, l.created_at) as created_at,
+        COALESCE(l.week_date, l.published_at) as week_date,
+        COALESCE(ls.type, l.type) as type,
+        COALESCE(l.post_score, ls.authority) as post_score,
+        l.author_name,
+        l.author_headline,
+        l.author_profile_url,
+        l.author_profile_image,
+        l.num_likes,
+        l.num_comments,
+        l.num_reposts,
+        l.media_url,
         1 as is_linkedin
-      FROM linkedin_content_scrape
-      ORDER BY COALESCE(post_score, 0) DESC, COALESCE(week_date, published_at) DESC
-      ${hasLimit ? `LIMIT ${limitPerSource}` : ''}
+      FROM linkedin_content_scrape l
+      LEFT JOIN linkedin_sources ls ON l.author_profile_url = ls.profile_url
+      ORDER BY COALESCE(l.post_score, ls.authority, 0) DESC, COALESCE(l.week_date, l.published_at) DESC
     `);
 
     // Busca Weekly Reports - usa published_at MENOS 7 dias como week_date
@@ -321,7 +336,7 @@ async function loader(
       source: item.source,
       publishedAt: item.week_date || item.updated_at,
       createdAt: item.created_at,
-      sourceCategory: normalizeSourceCategory(item.type, !!item.is_linkedin, !!item.is_weekly_report),
+      sourceCategory: normalizeSourceCategory(item.type, !!item.is_weekly_report),
       postScore: item.post_score,
       // Campos extras para LinkedIn
       author: item.author_name,
