@@ -8,7 +8,7 @@
       "subtitle": "The latest tech news, curated just for you",
       "items": {
         "__resolveType": "site/loaders/news.ts",
-        "limit": 150
+        "limit": 500
       }
     },
     {
