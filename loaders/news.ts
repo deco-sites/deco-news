@@ -199,14 +199,14 @@ async function loader(
         COALESCE(bs.name, 'Blog') as source,
         c.updated_at,
         COALESCE(c.published_at, c.created_at) as created_at,
-        COALESCE(c.week_date, c.publication_week, c.published_at, c.created_at) as week_date,
+        COALESCE(c.publication_week, c.published_at, c.created_at) as week_date,
         COALESCE(bs.type, 'blog') as type,
         COALESCE(c.post_score, bs.authority) as post_score,
         c.published_at
       FROM contents c
       LEFT JOIN blog_sources bs ON 
         INSTR(c.article_url, REPLACE(REPLACE(bs.url, 'https://', ''), 'http://', '')) > 0
-      ORDER BY COALESCE(c.post_score, bs.authority, 0) DESC, COALESCE(c.week_date, c.published_at, c.created_at) DESC
+      ORDER BY COALESCE(c.post_score, bs.authority, 0) DESC, COALESCE(c.publication_week, c.published_at, c.created_at) DESC
     `);
 
     // Busca Reddit com JOIN na tabela reddit_sources para pegar o type
