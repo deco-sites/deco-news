@@ -325,18 +325,21 @@ function LinkedInCard({ item }: { item: NewsItem }) {
     }
   };
 
-  // Handler para erro de carregamento de mídia
+  // Handler para erro de carregamento de mídia - mostra placeholder elegante de vídeo/mídia
   const handleMediaImageError = (e: Event) => {
     const img = e.target as HTMLImageElement;
     const container = img.parentElement;
     if (container) {
+      // Mostra placeholder de vídeo elegante quando a mídia não carrega
       container.innerHTML = `
-        <div class="flex items-center justify-center w-full h-full">
-          <div class="text-center p-6">
-            <svg class="w-12 h-12 text-neutral-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <p class="text-xs text-neutral-400">Content not available</p>
+        <div class="flex items-center justify-center w-full h-full bg-gradient-to-br from-neutral-800 to-neutral-900">
+          <div class="text-center">
+            <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center border border-white/20">
+              <svg class="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+            </div>
+            <p class="text-sm text-white/70 font-medium">Video on LinkedIn</p>
           </div>
         </div>
       `;
@@ -393,13 +396,31 @@ function LinkedInCard({ item }: { item: NewsItem }) {
           {/* Media */}
           {item.image && (
             <div class="aspect-[16/9] overflow-hidden rounded-xl bg-neutral-100 mb-4 -mx-2">
-              <img
-                src={item.image}
-                alt="Post media"
-                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                loading="lazy"
-                onError={handleMediaImageError}
-              />
+              {/* Se for vídeo, mostra placeholder em vez de tentar carregar imagem */}
+              {/* Detecta vídeo pelo mediaType OU pela URL da mídia */}
+              {(item.mediaType?.toLowerCase() === 'video' || 
+                item.image?.includes('dms.licdn.com/playlist') ||
+                item.image?.includes('/video/') ||
+                item.image?.includes('.mp4')) ? (
+                <div class="flex items-center justify-center w-full h-full bg-gradient-to-br from-neutral-800 to-neutral-900">
+                  <div class="text-center">
+                    <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center border border-white/20">
+                      <svg class="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z"/>
+                      </svg>
+                    </div>
+                    <p class="text-sm text-white/70 font-medium">Video on LinkedIn</p>
+                  </div>
+                </div>
+              ) : (
+                <img
+                  src={item.image}
+                  alt="Post media"
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  loading="lazy"
+                  onError={handleMediaImageError}
+                />
+              )}
             </div>
           )}
 
@@ -874,7 +895,7 @@ export default function News({
                       <h2 class="text-3xl font-bold text-neutral-900">{label}</h2>
                     </div>
                     <div class="flex-1 h-px bg-gradient-to-r from-neutral-200 to-transparent" />
-                    <span class="text-sm text-neutral-400 bg-white px-4 py-2 rounded-full border border-neutral-200/50">
+                    <span class="week-article-count text-sm text-neutral-400 bg-white px-4 py-2 rounded-full border border-neutral-200/50">
                       {weekItems.length} {weekItems.length === 1 ? "article" : "articles"}
                     </span>
                   </div>

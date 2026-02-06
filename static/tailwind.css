@@ -3738,6 +3738,11 @@ input.tab:checked + .tab-content,
   --tw-gradient-to: rgb(229 229 229 / 0) var(--tw-gradient-to-position);
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
 }
+.from-neutral-800{
+  --tw-gradient-from: #262626 var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(38 38 38 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
 .from-neutral-900{
   --tw-gradient-from: #171717 var(--tw-gradient-from-position);
   --tw-gradient-to: rgb(23 23 23 / 0) var(--tw-gradient-to-position);
@@ -4276,6 +4281,9 @@ input.tab:checked + .tab-content,
 .text-white{
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity));
+}
+.text-white\/70{
+  color: rgb(255 255 255 / 0.7);
 }
 .underline{
   text-decoration-line: underline;

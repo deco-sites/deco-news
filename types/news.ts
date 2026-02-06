@@ -55,6 +55,10 @@ export interface NewsItem {
    */
   metaTitle?: string;
   metaDescription?: string;
+  /**
+   * Tipo de mídia do post (image, video, etc)
+   */
+  mediaType?: string;
 }
 
 export interface ScrapedContent {

@@ -82,6 +82,7 @@ export interface UnifiedContent {
   num_comments?: number;
   num_reposts?: number;
   media_url?: string;
+  post_type?: string;
   is_linkedin?: boolean;
   // Campos extras para Weekly Report
   is_weekly_report?: boolean;
@@ -248,6 +249,7 @@ async function loader(
         l.num_comments,
         l.num_reposts,
         l.media_url,
+        l.post_type,
         1 as is_linkedin
       FROM linkedin_content_scrape l
       LEFT JOIN linkedin_sources ls ON l.author_profile_url = ls.profile_url
@@ -347,6 +349,7 @@ async function loader(
       numComments: item.num_comments,
       numReposts: item.num_reposts,
       image: item.media_url,
+      mediaType: item.post_type,
       // Campos extras para Weekly Report
       isWeeklyReport: !!item.is_weekly_report,
       slug: item.slug,

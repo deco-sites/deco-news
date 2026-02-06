@@ -74,6 +74,49 @@ export default function FilterTabs({ counts }: Props) {
 
     // Adiciona a classe do filtro atual
     container.classList.add(`filter-${filter}`);
+
+    // Esconde seções de semana que não têm cards visíveis para o filtro atual
+    const weekSections = container.querySelectorAll(".week-section");
+    weekSections.forEach((section) => {
+      const cards = section.querySelectorAll(".news-card-wrapper");
+      let hasVisibleCards = false;
+
+      if (filter === "all") {
+        // Se filtro é "all", todas as seções são visíveis
+        hasVisibleCards = cards.length > 0;
+      } else {
+        // Verifica se algum card corresponde ao filtro
+        cards.forEach((card) => {
+          const category = card.getAttribute("data-category");
+          if (category === filter) {
+            hasVisibleCards = true;
+          }
+        });
+      }
+
+      // Mostra ou esconde a seção da semana
+      if (hasVisibleCards) {
+        (section as HTMLElement).style.display = "";
+      } else {
+        (section as HTMLElement).style.display = "none";
+      }
+
+      // Atualiza o contador de artigos visíveis na seção
+      const countBadge = section.querySelector(".week-article-count");
+      if (countBadge) {
+        let visibleCount = 0;
+        if (filter === "all") {
+          visibleCount = cards.length;
+        } else {
+          cards.forEach((card) => {
+            if (card.getAttribute("data-category") === filter) {
+              visibleCount++;
+            }
+          });
+        }
+        countBadge.textContent = `${visibleCount} ${visibleCount === 1 ? "article" : "articles"}`;
+      }
+    });
   }, [currentFilter.value]);
 
   // Reordena os cards por post_score
