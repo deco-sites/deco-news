@@ -256,8 +256,8 @@ async function loader(
       ORDER BY COALESCE(l.post_score, ls.authority, 0) DESC, COALESCE(l.week_date, l.published_at) DESC
     `);
 
-    // Busca Weekly Reports - usa published_at MENOS 7 dias como week_date
-    // Isso porque o Weekly é publicado na semana atual mas refere-se aos acontecimentos da semana passada
+    // Busca Weekly Reports - usa published_at como week_date
+    // O Weekly fica agrupado na semana em que foi publicado (semana atual)
     const weeklyResult = await db.query<UnifiedContent>(`
       SELECT 
         id,
@@ -267,7 +267,7 @@ async function loader(
         'Deco Weekly' as source,
         created_at as updated_at,
         COALESCE(published_at, created_at) as created_at,
-        date(COALESCE(published_at, created_at), '-7 days') as week_date,
+        COALESCE(published_at, created_at) as week_date,
         'weekly-report' as type,
         1000 as post_score,
         author as author_name,
